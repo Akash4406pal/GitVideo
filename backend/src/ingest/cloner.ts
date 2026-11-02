@@ -39,11 +39,20 @@ export async function ingestRepository(source: string, cacheDir = ".cache/repos"
     };
   }
 
+  // Validate source to prevent command/flag injection
+  if (source.startsWith("-")) {
+    throw new Error(`Security validation failed: Invalid repository source '${source}'.`);
+  }
+
   // Treat as Git URL (HTTPS or SSH)
   const sanitizedName = source
     .replace(/^https?:\/\/github\.com\//i, "")
     .replace(/\.git$/i, "")
     .replace(/[^a-zA-Z0-9_\-]/g, "_");
+
+  if (!sanitizedName || sanitizedName.trim() === "") {
+    throw new Error(`Invalid repository name derived from '${source}'.`);
+  }
 
   const targetDir = path.resolve(cacheDir, sanitizedName);
 
@@ -55,7 +64,8 @@ export async function ingestRepository(source: string, cacheDir = ".cache/repos"
   fs.mkdirSync(path.dirname(targetDir), { recursive: true });
 
   console.log(`[Ingest] Cloning ${source} (shallow depth 1) to ${targetDir}...`);
-  await execFileAsync("git", ["clone", "--depth", "1", source, targetDir]);
+  // Use '--' separator to guarantee source is parsed as positional URL argument
+  await execFileAsync("git", ["clone", "--depth", "1", "--", source, targetDir]);
 
   let commitSha = "unknown";
   let branch = "main";

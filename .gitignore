@@ -6,20 +6,24 @@ node_modules/
 dist/
 build/
 out/
+.next/
 *.tsbuildinfo
+
+# Cache and ephemeral clones
+.cache/
+.temp/
+temp/
 
 # Environment variables & secrets
 .env
 .env.*
 !.env.example
 
-# Logs and temp
+# Logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
-.temp/
-temp/
 
 # OS files
 .DS_Store
@@ -28,4 +32,3 @@ Thumbs.db
 # Documentation / Notes (keep README.md tracked)
 *.md
 !README.md
-GitVideo_Hackathon_Architecture
