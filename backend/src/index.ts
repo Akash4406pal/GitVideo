@@ -4,30 +4,38 @@ import dotenv from "dotenv";
 import { ingestRepository } from "./ingest/cloner.js";
 import { buildSkeleton } from "./analyzer/skeletonBuilder.js";
 import { generateStoryboard } from "./storyboard/storyboardGenerator.js";
+import { synthesizeStoryboardAudio } from "./tts/audioSynthesizer.js";
+import { renderWalkthroughVideo } from "./remotion/renderVideo.js";
 import { config } from "./config/env.js";
 
 dotenv.config();
 
 async function main() {
   const args = process.argv.slice(2);
-  const targetSource = args[0] || ".";
-  const outputDir = path.resolve(args[1] || config.OUTPUT_DIR || "./dist");
+  const skipRender = args.includes("--skip-render");
+  const filteredArgs = args.filter((a) => !a.startsWith("--"));
+
+  const targetSource = filteredArgs[0] || ".";
+  const outputDir = path.resolve(filteredArgs[1] || config.OUTPUT_DIR || "./dist");
+  const audioOutputDir = path.join(outputDir, "audio");
 
   console.log(`\n==============================================`);
-  console.log(`  GitVideo Pipeline: Ingest -> Storyboard`);
+  console.log(`  GitVideo Pipeline: Ingest -> Story -> Voice -> Video`);
   console.log(`==============================================`);
-  console.log(`[Target] ${targetSource}`);
-  console.log(`[Output] ${outputDir}\n`);
+  console.log(`[Target Source] ${targetSource}`);
+  console.log(`[Output Dir]    ${outputDir}`);
+  console.log(`[Audio Dir]     ${audioOutputDir}\n`);
 
   const startTime = Date.now();
 
   try {
-    // 1. Ingest repository (clone or local read)
-    console.log(`Step 1/2: Ingesting repository...`);
+    // ----------------------------------------------------
+    // Step 1: Ingest & Static Code Analysis
+    // ----------------------------------------------------
+    console.log(`Step 1/4: Ingesting repository...`);
     const ingest = await ingestRepository(targetSource, path.join(config.CACHE_DIR, "repos"));
     console.log(`✔ Ingested: ${ingest.repoName} (Branch: ${ingest.branch}, Commit: ${ingest.commitSha})`);
 
-    // 2. Build and validate skeleton
     console.log(`\nAnalyzing AST, entrypoints, and snippets...`);
     const skeleton = await buildSkeleton(ingest, targetSource);
     console.log(`✔ Scanned ${skeleton.files.length} source files (${skeleton.repo.totalLinesOfCode} LOC)`);
@@ -36,23 +44,54 @@ async function main() {
     console.log(`✔ Entry points: ${skeleton.entryPoints.join(", ") || "None"}`);
     console.log(`✔ Snippets extracted: ${skeleton.snippets.length}`);
 
-    // Ensure output dir exists
     fs.mkdirSync(outputDir, { recursive: true });
     const skeletonPath = path.join(outputDir, "skeleton.json");
     fs.writeFileSync(skeletonPath, JSON.stringify(skeleton, null, 2), "utf-8");
     console.log(`✔ Skeleton saved to: ${skeletonPath}`);
 
-    // 3. Step 2: Storyboard Generation with BharatCode LLM
-    const storyboard = await generateStoryboard(skeleton);
+    // ----------------------------------------------------
+    // Step 2: Storyboard Generation with BharatCode LLM
+    // ----------------------------------------------------
+    console.log(`\nStep 2/4: Storyboard Script Generation...`);
+    const initialStoryboard = await generateStoryboard(skeleton);
+
+    // ----------------------------------------------------
+    // Step 3: Voiceover & Audio Timing Synthesis
+    // ----------------------------------------------------
+    console.log(`\nStep 3/4: Voiceover & Audio Synthesis...`);
+    const { storyboard, totalAudioDurationSec, totalClipsGenerated } = await synthesizeStoryboardAudio(
+      initialStoryboard,
+      audioOutputDir
+    );
+
+    // Save final storyboard enriched with audio timing and paths
     const storyboardPath = path.join(outputDir, "storyboard.json");
     fs.writeFileSync(storyboardPath, JSON.stringify(storyboard, null, 2), "utf-8");
-    console.log(`✔ Storyboard saved to: ${storyboardPath}`);
+    console.log(`✔ Enriched Storyboard saved to: ${storyboardPath}`);
+
+    // ----------------------------------------------------
+    // Step 4: Remotion Video Composition & Rendering
+    // ----------------------------------------------------
+    let videoPath: string | null = null;
+    if (!skipRender) {
+      console.log(`\nStep 4/4: Remotion Video Rendering (MP4 720p 30fps)...`);
+      videoPath = await renderWalkthroughVideo(skeleton, storyboard, {
+        outputVideoPath: path.join(outputDir, "walkthrough.mp4"),
+      });
+    } else {
+      console.log(`\nStep 4/4: Video rendering skipped via --skip-render`);
+    }
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log(`\n==============================================`);
-    console.log(`✨ Steps 1 & 2 Completed Successfully in ${elapsed}s!`);
-    console.log(`   - Skeleton:   ${skeletonPath}`);
-    console.log(`   - Storyboard: ${storyboardPath}`);
+    console.log(`✨ Pipeline Completed Successfully in ${elapsed}s!`);
+    console.log(`   - Skeleton:     ${skeletonPath}`);
+    console.log(`   - Storyboard:   ${storyboardPath}`);
+    console.log(`   - Audio Clips:  ${totalClipsGenerated} clips in ${audioOutputDir}`);
+    console.log(`   - Video Length: ~${totalAudioDurationSec}s`);
+    if (videoPath) {
+      console.log(`   - Video File:   ${videoPath}`);
+    }
     console.log(`==============================================\n`);
   } catch (error) {
     console.error(`\n❌ Pipeline failed:`, error);

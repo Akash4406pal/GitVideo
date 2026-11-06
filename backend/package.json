@@ -7,11 +7,22 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "analyze": "tsx src/index.ts",
+    "render": "tsx src/index.ts",
+    "render:quick": "tsx src/index.ts --skip-render",
     "build": "tsc",
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@remotion/bundler": "^4.0.541",
+    "@remotion/renderer": "^4.0.541",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
     "dotenv": "^16.4.7",
+    "get-mp3-duration": "^1.0.0",
+    "msedge-tts": "^2.1.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.541",
     "zod": "^4.6.7"
   },
   "devDependencies": {
