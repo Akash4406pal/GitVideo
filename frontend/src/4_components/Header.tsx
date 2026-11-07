@@ -1,8 +1,13 @@
 "use client";
 
 import React from 'react';
+import { UserNav } from './UserNav';
 
-export function Header() {
+interface HeaderProps {
+  onOpenAuth?: () => void;
+}
+
+export function Header({ onOpenAuth = () => {} }: HeaderProps) {
   return (
     <header className="fixed top-0 left-0 right-0 w-full z-50 bg-surface-container-lowest/80 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(0,0,0,0.6)]">
       <div className="h-16 w-full px-margin-desktop flex items-center justify-between gap-space-lg">
@@ -37,20 +42,14 @@ export function Header() {
           </a>
         </nav>
 
-        {/* Status Indicator & Profile */}
+        {/* Status Indicator & User Profile */}
         <div className="flex items-center gap-space-md shrink-0">
           <div className="hidden sm:flex items-center gap-space-xs px-space-sm py-1 rounded-full bg-surface-container-lowest">
             <span className="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
             <span className="font-code-sm text-code-sm text-on-surface-variant">v1.0 BharatCode Online</span>
           </div>
           <div className="h-4 w-px bg-surface-variant hidden sm:block"></div>
-          <a href="https://github.com/Akash4406pal/GitVideo" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-space-xs px-space-md py-1.5 rounded-lg bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors font-body-base text-body-base">
-            <span className="material-symbols-outlined text-[16px]">code</span>
-            <span className="hidden md:inline font-code-sm text-code-sm">Akash4406pal</span>
-          </a>
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
-          </div>
+          <UserNav onOpenAuth={onOpenAuth} />
         </div>
       </div>
     </header>

@@ -56,16 +56,17 @@ export async function buildSkeleton(ingest: IngestResult, sourceUrl: string): Pr
           const role = determineFileRole(normalizedRelPath, isEntry);
           const snippetIds: string[] = [];
 
-          // Generate snippets for entry points or high-priority core files (up to 10 snippets max)
-          if ((isEntry || role === "core" || role === "route") && snippets.length < 12) {
+          const ext = path.extname(fullPath).toLowerCase();
+          const isCodeFile = [".ts", ".tsx", ".js", ".jsx", ".py", ".sql", ".go", ".rs", ".java", ".c", ".cpp", ".h", ".sh"].includes(ext);
+
+          // Generate snippets for entry points, core files, or code files (up to 12 snippets max)
+          if ((isEntry || role === "core" || role === "route" || (isCodeFile && fileNodes.length < 10)) && snippets.length < 12) {
             const extracted = extractSnippet(fileId, normalizedRelPath, content, snippetCounter++);
             if (extracted) {
               snippets.push(extracted.snippet);
               snippetIds.push(extracted.snippetId);
             }
           }
-
-          const ext = path.extname(fullPath).toLowerCase();
           const imports = extractImports(content, ext);
           for (const imp of imports) {
             dependencyEdges.push({
@@ -91,6 +92,28 @@ export async function buildSkeleton(ingest: IngestResult, sourceUrl: string): Pr
   }
 
   walkDir(repoRoot);
+
+  // Guarantee that snippets are extracted even for repos without traditional src/ directories
+  if (snippets.length === 0) {
+    const candidateFiles = fileNodes
+      .filter((f) => ![".md", ".json", ".lock", ".txt", ".yml", ".yaml", ".svg", ".png"].includes(f.extension))
+      .sort((a, b) => b.loc - a.loc)
+      .slice(0, 4);
+
+    for (const f of candidateFiles) {
+      const fullPath = path.join(repoRoot, f.path);
+      if (fs.existsSync(fullPath)) {
+        try {
+          const content = fs.readFileSync(fullPath, "utf-8");
+          const extracted = extractSnippet(f.id, f.path, content, snippetCounter++);
+          if (extracted) {
+            snippets.push(extracted.snippet);
+            f.snippetIds.push(extracted.snippetId);
+          }
+        } catch {}
+      }
+    }
+  }
 
   // Read README excerpt if available
   let readmeExcerpt: string | undefined;

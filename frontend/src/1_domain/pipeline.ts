@@ -39,4 +39,7 @@ export interface ActiveJob {
   progressPercent?: number;
   streamType?: string;
   activeModelNode?: string;
+  videoUrl?: string | null;
+  videoDurationSec?: number;
+  videoSizeMb?: string;
 }

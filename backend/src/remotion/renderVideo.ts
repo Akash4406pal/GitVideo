@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { bundle } from "@remotion/bundler";
@@ -50,6 +51,7 @@ function embedAudioDataUris(storyboard: Storyboard): Storyboard {
 
 export interface RenderOptions {
   outputVideoPath?: string;
+  previewOnly?: boolean; // Renders the first ~10s chunk for rapid preview
   onProgress?: (percent: number) => void;
 }
 
@@ -74,6 +76,11 @@ export async function renderWalkthroughVideo(
   if (browserExecutable) {
     console.log(`[Chromium]    ${browserExecutable}`);
   }
+
+  // Optimize concurrency for multi-core hardware
+  const numCores = os.cpus().length || 4;
+  const renderConcurrency = Math.min(8, Math.max(2, Math.floor(numCores / 2)));
+  console.log(`[Concurrency] ${renderConcurrency} parallel threads (detected ${numCores} CPU cores)`);
 
   console.log(`\n📦 Bundling Remotion compositions...`);
   const bundleLocation = await bundle({
@@ -112,7 +119,15 @@ export async function renderWalkthroughVideo(
   console.log(`   - Dimensions: ${composition.width}x${composition.height} @ ${composition.fps}fps`);
   console.log(`   - Duration:   ${composition.durationInFrames} frames (~${durationSec}s)`);
 
-  console.log(`\n🎬 Rendering frames to MP4...`);
+  const frameRange: [number, number] | undefined = options.previewOnly
+    ? [0, Math.min(300, composition.durationInFrames - 1)]
+    : undefined;
+
+  if (frameRange) {
+    console.log(`⚡ Quick Preview Mode: rendering frames [${frameRange[0]} to ${frameRange[1]}] (~10s)`);
+  }
+
+  console.log(`\n🎬 Rendering frames to MP4 in parallel...`);
   let lastLoggedPercent = -1;
 
   await renderMedia({
@@ -122,6 +137,10 @@ export async function renderWalkthroughVideo(
     outputLocation: outputPath,
     inputProps,
     browserExecutable,
+    concurrency: renderConcurrency,
+    x264Preset: "veryfast",
+    crf: 22,
+    frameRange,
     onProgress: ({ renderedFrames, progress }) => {
       const percent = Math.floor(progress * 100);
       if (percent !== lastLoggedPercent && percent % 10 === 0) {

@@ -20,8 +20,8 @@ export async function callBharatCodeModel(
   const payload = {
     model: config.BHARATCODE_MODEL,
     messages,
-    temperature: 0.2, // Low temperature for deterministic JSON output
-    max_tokens: 3000,
+    temperature: 0.1, // Low temperature for deterministic JSON output
+    max_tokens: 6144,
   };
 
   let lastError: Error | null = null;
@@ -54,6 +54,7 @@ export async function callBharatCodeModel(
       const content = data?.choices?.[0]?.message?.content;
 
       if (!content || typeof content !== "string") {
+        console.warn(`[BharatCode] Unexpected API response body: ${JSON.stringify(data)}`);
         throw new Error("Empty or malformed completion received from BharatCode API");
       }
 

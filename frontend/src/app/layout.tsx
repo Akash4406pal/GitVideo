@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "@/5_shared/providers/AuthProvider";
 
 export const metadata: Metadata = {
   title: "GitVideo - Codebase to Explainer Video",
@@ -28,7 +29,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-surface font-body-base text-body-base text-on-surface flex flex-col min-h-screen">
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

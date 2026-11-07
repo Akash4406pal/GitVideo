@@ -1,83 +1,84 @@
 import type { Skeleton } from "../types/skeleton.js";
 
 export function buildSystemPrompt(): string {
-  return `You are GitVideo's expert code narrator and video storyboard director.
-Your job is to generate a high-energy, 60-to-80 second video script explaining a software repository.
+  return `CRITICAL REASONING INSTRUCTION: Keep internal reasoning under 30 words. Jump directly into producing the pure JSON storyboard.
 
-CRITICAL RULES:
-1. OUTPUT PURE JSON ONLY. No markdown formatting, no backticks (\`\`\`json), no preamble, no outro.
-2. STRICT SCHEMA COMPLIANCE: Your output must match the exact JSON structure provided in the prompt.
-3. GROUNDING IS MANDATORY:
-   - Only reference fileId (e.g. "f_1"), snippetId (e.g. "s_1"), and line ranges that appear in the provided repository skeleton.
-   - NEVER invent nonexistent files or code snippets.
-4. PACING & WORD BUDGET:
-   - Total words across all scenes MUST be between 120 and 180 words (~2.3 words per second for a 60-80s video).
-   - Keep narration punchy, developer-focused, and natural for text-to-speech.
-5. SCENE SEQUENCE (Must be exactly 5 scenes in order):
-   - Scene 1 ("title"): Hook the viewer. Explain what the project solves and its tech stack.
-   - Scene 2 ("file_tree"): Show directory layout, highlighting entrypoint files.
-   - Scene 3 ("code_focus"): Deep dive into the primary code snippet (use valid snippetId and line highlights).
-   - Scene 4 ("graph"): Explain how components and modules interact using dependency edges.
-   - Scene 5 ("outro"): Quickstart command, call to action to star the repo, conclusion.`;
+You are GitVideo's lead developer evangelist and technical video narrator.
+Your job is to generate a punchy, 35-to-45 second video script explaining the actual code and architecture of a software repository.
+
+CRITICAL INSTRUCTIONS:
+1. OUTPUT PURE JSON ONLY. No markdown ticks (\`\`\`json), no preamble, no conversational text.
+2. NATURAL SPOKEN SCRIPT (VOICEOVER FOR HUMAN VOICE ACTOR):
+   - The "text" field in each segment is read ALOUD by text-to-speech.
+   - NEVER write raw snake_case or underscores in "text". Always translate to natural spoken words (e.g. write "customer behavior SQL queries", NEVER "customer_behavior_sql_queries").
+   - Do not speak file extensions literally (say "in the SQL script", not "dot sql").
+   - TONE: Senior software engineer demoing architecture at a tech conference. Be conversational, crisp, and direct. Avoid pedantic, academic, or "teachy" phrases like "let us examine" or "this allows us to cleanly orchestrate".
+3. EXPLAIN THE REAL CODE IN DETAIL:
+   - In Scene 3 ("code_focus"), inspect the snippet code provided in the prompt.
+   - Mention the ACTUAL function names, SQL queries, class names, or API routes present in the code.
+   - Explain HOW the logic works and WHY it's written that way.
+   - NEVER use generic filler phrases.
+4. PACING & LENGTH (PUNCHY & FAST):
+   - Total duration: 35 to 45 seconds (~80 to 110 words total).
+   - Each narration segment must be 1 to 2 punchy sentences (under 25 words per segment).
+5. EXACT 5 SCENES:
+   - Scene 1 ("title"): Hook the viewer. Explain what real-world problem this repo solves.
+   - Scene 2 ("file_tree"): Explain the directory structure and where execution starts.
+   - Scene 3 ("code_focus"): Deep dive into the primary code snippet, explaining specific lines and functions.
+   - Scene 4 ("graph"): Explain the data flow and how internal modules connect.
+   - Scene 5 ("outro"): Tell developers how to run or contribute to it.`;
 }
 
 export function buildUserPrompt(skeleton: Skeleton): string {
-  // Condense snippets for token economy
-  const condensedSnippets = skeleton.snippets.slice(0, 4).map((s) => ({
-    snippetId: s.id,
+  // Give the LLM real code content so it can actually explain it!
+  const snippetsForPrompt = skeleton.snippets.slice(0, 2).map((s) => ({
+    id: s.id,
     fileId: s.fileId,
     filePath: s.filePath,
     startLine: s.startLine,
     endLine: s.endLine,
-    preview: s.code.split("\n").slice(0, 10).join("\n"),
-  }));
-
-  const condensedEdges = skeleton.dependencyEdges.slice(0, 12).map((e) => ({
-    from: e.sourcePath,
-    to: e.importedTarget,
+    code: s.code.split("\n").slice(0, 18).join("\n"),
   }));
 
   const payload = {
-    repo: {
-      name: skeleton.repo.name,
-      languages: skeleton.repo.detectedLanguages,
-      frameworks: skeleton.repo.detectedFrameworks,
-      loc: skeleton.repo.totalLinesOfCode,
-      totalFiles: skeleton.repo.totalFiles,
-      summary: skeleton.summary,
-    },
-    entryPoints: skeleton.entryPoints,
-    availableFiles: skeleton.files.slice(0, 15).map((f) => ({ id: f.id, path: f.path, role: f.role })),
-    availableSnippets: condensedSnippets,
-    dependencyEdges: condensedEdges,
+    repoName: skeleton.repo.name,
+    languages: skeleton.repo.detectedLanguages.length > 0 ? skeleton.repo.detectedLanguages : ["Code"],
+    frameworks: skeleton.repo.detectedFrameworks,
+    totalFiles: skeleton.repo.totalFiles,
+    loc: skeleton.repo.totalLinesOfCode,
+    readmeExcerpt: skeleton.repo.readmeExcerpt?.slice(0, 300) || "",
+    entryPoints: skeleton.entryPoints.slice(0, 3),
+    primarySnippet: snippetsForPrompt[0] || null,
+    moduleDependencies: skeleton.dependencyEdges.slice(0, 6).map((e) => `${e.sourcePath} -> ${e.importedTarget}`),
   };
 
-  const firstSnippetId = skeleton.snippets[0]?.id || "s_1";
-  const firstFileId = skeleton.snippets[0]?.fileId || skeleton.files[0]?.id || "f_1";
+  const primarySnippetId = skeleton.snippets[0]?.id || "s_1";
+  const primaryFileId = skeleton.snippets[0]?.fileId || skeleton.files[0]?.id || "f_1";
 
-  return `Generate a 5-scene GitVideo Storyboard JSON for this repository skeleton:
-
+  return `Repository Information & Real Code:
 ${JSON.stringify(payload, null, 2)}
 
-Return JSON matching this exact structure:
+Generate a 5-scene JSON storyboard explaining the real code above. Total word count must be 80-110 words (~40s total).
+
+Required JSON format:
 {
   "repoName": "${skeleton.repo.name}",
-  "targetDurationSec": 75,
-  "estimatedDurationSec": 75,
-  "totalWordCount": 150,
-  "tone": "engaging",
+  "targetDurationSec": 40,
+  "estimatedDurationSec": 40,
+  "totalWordCount": 95,
+  "tone": "technical",
   "scenes": [
     {
       "id": "scene_1",
       "sceneNumber": 1,
       "type": "title",
-      "title": "Welcome to ${skeleton.repo.name}",
-      "description": "Introduction hook and tech stack presentation",
-      "durationEstimateSec": 12,
+      "title": "${skeleton.repo.name}",
+      "description": "Project purpose and stack overview",
+      "durationEstimateSec": 7,
       "segments": [
         {
           "id": "seg_1_1",
-          "text": "Welcome to ${skeleton.repo.name}, an open-source project built with ${skeleton.repo.detectedLanguages.join(", ") || "code"}.",
+          "text": "Specific 1-2 sentence hook explaining what problem this project solves.",
           "focus": {}
         }
       ]
@@ -86,14 +87,14 @@ Return JSON matching this exact structure:
       "id": "scene_2",
       "sceneNumber": 2,
       "type": "file_tree",
-      "title": "Project Structure & Entrypoints",
-      "description": "Directory layout and bootstrap files",
-      "durationEstimateSec": 14,
+      "title": "Architecture & Entrypoints",
+      "description": "Directory layout and entry point",
+      "durationEstimateSec": 8,
       "segments": [
         {
           "id": "seg_2_1",
-          "text": "The project organizes core components neatly, bootstrapping execution from ${skeleton.entryPoints[0] || skeleton.files[0]?.path || "entry point"}.",
-          "focus": { "fileId": "${firstFileId}" }
+          "text": "Explaining the organization and entrypoint from ${skeleton.entryPoints[0] || skeleton.files[0]?.path || 'source'}.",
+          "focus": { "fileId": "${primaryFileId}" }
         }
       ]
     },
@@ -101,16 +102,16 @@ Return JSON matching this exact structure:
       "id": "scene_3",
       "sceneNumber": 3,
       "type": "code_focus",
-      "title": "Core Implementation",
-      "description": "Key logic and function analysis",
-      "durationEstimateSec": 20,
+      "title": "Code Deep Dive",
+      "description": "Explaining the core function/logic in detail",
+      "durationEstimateSec": 12,
       "segments": [
         {
           "id": "seg_3_1",
-          "text": "Looking into the core implementation, we see how the central handler sets up the workflow.",
+          "text": "Detailed explanation mentioning actual function/query names from the primarySnippet.",
           "focus": {
-            "snippetId": "${firstSnippetId}",
-            "fileId": "${firstFileId}",
+            "snippetId": "${primarySnippetId}",
+            "fileId": "${primaryFileId}",
             "highlightLines": [1, 2, 3]
           }
         }
@@ -120,13 +121,13 @@ Return JSON matching this exact structure:
       "id": "scene_4",
       "sceneNumber": 4,
       "type": "graph",
-      "title": "Architecture & Flow",
-      "description": "Dependency connections across modules",
-      "durationEstimateSec": 15,
+      "title": "Module Data Flow",
+      "description": "How components connect together",
+      "durationEstimateSec": 8,
       "segments": [
         {
           "id": "seg_4_1",
-          "text": "The internal architecture connects services through clean interfaces and modular exports.",
+          "text": "Explaining how modules interact and pass data.",
           "focus": { "nodeIds": [] }
         }
       ]
@@ -135,13 +136,13 @@ Return JSON matching this exact structure:
       "id": "scene_5",
       "sceneNumber": 5,
       "type": "outro",
-      "title": "Getting Started",
-      "description": "Conclusion and call to action",
-      "durationEstimateSec": 14,
+      "title": "Run & Explore",
+      "description": "Quickstart and conclusion",
+      "durationEstimateSec": 6,
       "segments": [
         {
           "id": "seg_5_1",
-          "text": "Check out the repository on GitHub to dive deeper or build on top of it.",
+          "text": "Call to action on how to run or explore the repository.",
           "focus": {}
         }
       ]
@@ -149,4 +150,3 @@ Return JSON matching this exact structure:
   ]
 }`;
 }
-

@@ -4,6 +4,7 @@ import type { Storyboard } from "../types/storyboard.js";
 import { synthesizeSpeech } from "./edgeTtsClient.js";
 import { getAudioDurationInSeconds } from "./audioDuration.js";
 import { createSilentWav } from "./fallbackAudio.js";
+import { sanitizeForSpeech } from "./speechSanitizer.js";
 
 export interface AudioSynthesisResult {
   storyboard: Storyboard;
@@ -27,15 +28,19 @@ export async function synthesizeStoryboardAudio(
     let sceneAudioDuration = 0;
 
     for (const segment of scene.segments) {
+      // Sanitize spoken text so TTS never says "underscore" or reads awkward syntax
+      const cleanSpokenText = sanitizeForSpeech(segment.text);
+      segment.text = cleanSpokenText;
+
       const fileName = `${scene.id}_${segment.id}.mp3`;
       const filePath = path.join(outputAudioDir, fileName);
 
-      console.log(`🎙️  Synthesizing [${scene.id}/${segment.id}]: "${segment.text.substring(0, 50)}..."`);
+      console.log(`🎙️  Synthesizing [${scene.id}/${segment.id}]: "${cleanSpokenText.substring(0, 50)}..."`);
 
       let durationSec = 2.5;
 
       try {
-        await synthesizeSpeech(segment.text, filePath);
+        await synthesizeSpeech(cleanSpokenText, filePath);
         durationSec = getAudioDurationInSeconds(filePath);
         segment.audioPath = filePath;
       } catch (err: any) {

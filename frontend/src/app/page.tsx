@@ -1,9 +1,13 @@
 "use client";
 
+import React, { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { usePipeline } from '../3_hooks/usePipeline';
 import { Header } from '../4_components/Header';
+import { AuthModal } from '../4_components/AuthModal';
 import { RepoInputBar } from '../4_components/RepoInputBar';
 import { JobStatusBar } from '../4_components/JobStatusBar';
+import { VideoPlayerCard } from '../4_components/VideoPlayerCard';
 import { OrchestrationGraph } from '../4_components/OrchestrationGraph';
 import { TelemetryTerminal } from '../4_components/TelemetryTerminal';
 import { AstGraphPreview } from '../4_components/AstGraphPreview';
@@ -11,6 +15,10 @@ import { DiffModal } from '../4_components/DiffModal';
 import { Footer } from '../4_components/Footer';
 
 export default function PipelinePage() {
+  const { data: session } = useSession();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authReason, setAuthReason] = useState<string | undefined>();
+
   const {
     job,
     steps,
@@ -27,10 +35,22 @@ export default function PipelinePage() {
     copyLogs,
   } = usePipeline();
 
+  const handleAnalyzeRepo = (url: string, skipRender?: boolean) => {
+    if (!session?.user) {
+      setAuthReason("Sign in with GitHub or Google to generate an AI walkthrough video.");
+      setIsAuthModalOpen(true);
+      return;
+    }
+    analyzeRepo(url, skipRender);
+  };
+
   return (
     <>
-      {/* Fixed Desktop Header */}
-      <Header />
+      {/* Fixed Desktop Header with Auth & Quota */}
+      <Header onOpenAuth={() => {
+        setAuthReason(undefined);
+        setIsAuthModalOpen(true);
+      }} />
 
       {/* Main Viewport Workspace */}
       <main className="w-full pt-16 flex-1 bg-background">
@@ -42,7 +62,17 @@ export default function PipelinePage() {
 
             <div className="w-full flex flex-col gap-space-lg">
               {/* Repository Input & Quickstart Controls */}
-              <RepoInputBar onAnalyzeRepo={analyzeRepo} currentRepo={job.repoName} />
+              <RepoInputBar onAnalyzeRepo={handleAnalyzeRepo} currentRepo={job.repoName} />
+
+              {/* Rendered Video Player Card (when available) */}
+              {job.videoUrl && (
+                <VideoPlayerCard
+                  videoUrl={job.videoUrl}
+                  repoName={job.repoName}
+                  durationSec={job.videoDurationSec}
+                  sizeMb={job.videoSizeMb}
+                />
+              )}
 
               {/* Top Job & Streaming Telemetry Bar */}
               <JobStatusBar job={job} formattedTimer={formattedTimer} />
@@ -75,6 +105,13 @@ export default function PipelinePage() {
 
         {/* Interactive Diff Modal */}
         <DiffModal isOpen={isDiffOpen} onClose={closeDiff} />
+
+        {/* Authentication Modal */}
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+          reason={authReason}
+        />
       </main>
 
       {/* Desktop SaaS Footer */}

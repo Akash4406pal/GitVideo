@@ -13,6 +13,7 @@ dotenv.config();
 async function main() {
   const args = process.argv.slice(2);
   const skipRender = args.includes("--skip-render");
+  const previewOnly = args.includes("--preview");
   const filteredArgs = args.filter((a) => !a.startsWith("--"));
 
   const targetSource = filteredArgs[0] || ".";
@@ -77,6 +78,7 @@ async function main() {
       console.log(`\nStep 4/4: Remotion Video Rendering (MP4 720p 30fps)...`);
       videoPath = await renderWalkthroughVideo(skeleton, storyboard, {
         outputVideoPath: path.join(outputDir, "walkthrough.mp4"),
+        previewOnly,
       });
     } else {
       console.log(`\nStep 4/4: Video rendering skipped via --skip-render`);

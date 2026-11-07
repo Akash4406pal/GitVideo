@@ -4,6 +4,7 @@ import { buildSystemPrompt, buildUserPrompt } from "./prompts.js";
 import { callBharatCodeModel } from "./llmClient.js";
 import { validateStoryboard } from "./validator.js";
 import { generateFallbackStoryboard } from "./fallbackStoryboard.js";
+import { repairAndParseJson } from "./jsonRepair.js";
 
 export async function generateStoryboard(skeleton: Skeleton): Promise<Storyboard> {
   console.log(`\n----------------------------------------------`);
@@ -20,7 +21,14 @@ export async function generateStoryboard(skeleton: Skeleton): Promise<Storyboard
       { role: "user", content: userPrompt },
     ]);
 
-    const parsedJson = JSON.parse(rawOutput);
+    let parsedJson: any;
+    try {
+      parsedJson = repairAndParseJson(rawOutput);
+    } catch (parseErr: any) {
+      console.warn(`[BharatCode] JSON parse & repair error: ${parseErr.message}`);
+      console.warn(`[BharatCode] Raw LLM response snippet (last 300 chars):\n${rawOutput.slice(-300)}`);
+      throw parseErr;
+    }
     const validation = validateStoryboard(parsedJson, skeleton);
 
     if (validation.isValid && validation.storyboard) {

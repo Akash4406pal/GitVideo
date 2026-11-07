@@ -1,8 +1,26 @@
 import dotenv from "dotenv";
 import { z } from "zod";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 
-// Load .env
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Look for .env in current directory, backend directory, or relative to this source file
+const envCandidates = [
+  path.resolve(process.cwd(), ".env"),
+  path.resolve(process.cwd(), "backend", ".env"),
+  path.resolve(__dirname, "../../.env"),
+  path.resolve(__dirname, "../../../.env"),
+];
+
+for (const candidate of envCandidates) {
+  if (fs.existsSync(candidate)) {
+    dotenv.config({ path: candidate });
+    break;
+  }
+}
 
 const EnvSchema = z.object({
   BHARATCODE_API_KEY: z.string().min(1, "BHARATCODE_API_KEY is required in .env"),

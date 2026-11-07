@@ -10,7 +10,7 @@ export function detectLanguagesAndFrameworks(repoRoot: string): DetectedStack {
   const languages = new Set<string>();
   const frameworks = new Set<string>();
 
-  // Helper to inspect a single package.json
+  // 1. Inspect package.json manifests
   function inspectPackageJson(pkgPath: string) {
     if (!fs.existsSync(pkgPath)) return;
     languages.add("JavaScript");
@@ -34,19 +34,16 @@ export function detectLanguagesAndFrameworks(repoRoot: string): DetectedStack {
       if (allDeps.remotion || allDeps["@remotion/core"] || allDeps["@remotion/cli"]) frameworks.add("Remotion");
       if (allDeps.tailwindcss) frameworks.add("TailwindCSS");
       if (allDeps.prisma || allDeps["@prisma/client"]) frameworks.add("Prisma");
-    } catch {
-      // ignore
-    }
+    } catch {}
   }
 
-  // Check root package.json and subfolders (for monorepos)
   inspectPackageJson(path.join(repoRoot, "package.json"));
   const commonDirs = ["backend", "frontend", "server", "client", "app", "apps/web", "packages/core"];
   for (const sub of commonDirs) {
     inspectPackageJson(path.join(repoRoot, sub, "package.json"));
   }
 
-  // Check Python
+  // 2. Check Python manifests
   const pythonManifests = [
     path.join(repoRoot, "requirements.txt"),
     path.join(repoRoot, "pyproject.toml"),
@@ -58,30 +55,40 @@ export function detectLanguagesAndFrameworks(repoRoot: string): DetectedStack {
     if (fs.existsSync(m)) {
       languages.add("Python");
       if (m.endsWith("requirements.txt")) {
-        const content = fs.readFileSync(m, "utf-8").toLowerCase();
-        if (content.includes("fastapi")) frameworks.add("FastAPI");
-        if (content.includes("flask")) frameworks.add("Flask");
-        if (content.includes("django")) frameworks.add("Django");
-        if (content.includes("torch") || content.includes("pytorch")) frameworks.add("PyTorch");
-        if (content.includes("tensorflow")) frameworks.add("TensorFlow");
+        try {
+          const content = fs.readFileSync(m, "utf-8").toLowerCase();
+          if (content.includes("fastapi")) frameworks.add("FastAPI");
+          if (content.includes("flask")) frameworks.add("Flask");
+          if (content.includes("django")) frameworks.add("Django");
+          if (content.includes("pandas")) frameworks.add("Pandas");
+          if (content.includes("numpy")) frameworks.add("NumPy");
+          if (content.includes("torch") || content.includes("pytorch")) frameworks.add("PyTorch");
+          if (content.includes("tensorflow")) frameworks.add("TensorFlow");
+        } catch {}
       }
     }
   }
 
-  // Check Go
-  if (fs.existsSync(path.join(repoRoot, "go.mod")) || fs.existsSync(path.join(repoRoot, "backend", "go.mod"))) {
-    languages.add("Go");
-  }
-
-  // Check Rust
-  if (fs.existsSync(path.join(repoRoot, "Cargo.toml")) || fs.existsSync(path.join(repoRoot, "backend", "Cargo.toml"))) {
-    languages.add("Rust");
-  }
-
-  // Check Java
-  if (fs.existsSync(path.join(repoRoot, "pom.xml")) || fs.existsSync(path.join(repoRoot, "build.gradle"))) {
-    languages.add("Java");
-  }
+  // 3. Scan files across root and top directories to catch extensions
+  try {
+    const entries = fs.readdirSync(repoRoot, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.isFile()) {
+        const ext = path.extname(entry.name).toLowerCase();
+        if (ext === ".sql") languages.add("SQL");
+        else if (ext === ".py") languages.add("Python");
+        else if (ext === ".ts" || ext === ".tsx") languages.add("TypeScript");
+        else if (ext === ".js" || ext === ".jsx" || ext === ".mjs") languages.add("JavaScript");
+        else if (ext === ".go") languages.add("Go");
+        else if (ext === ".rs") languages.add("Rust");
+        else if (ext === ".java") languages.add("Java");
+        else if (ext === ".c" || ext === ".cpp" || ext === ".h") languages.add("C/C++");
+        else if (ext === ".sh" || ext === ".bash") languages.add("Shell");
+        else if (ext === ".php") languages.add("PHP");
+        else if (ext === ".rb") languages.add("Ruby");
+      }
+    }
+  } catch {}
 
   return {
     languages: Array.from(languages),
