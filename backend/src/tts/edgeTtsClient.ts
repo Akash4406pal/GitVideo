@@ -12,7 +12,7 @@ export async function synthesizeSpeech(
   outputPath: string,
   options: TtsOptions = {}
 ): Promise<void> {
-  const voice = options.voice || process.env.TTS_VOICE || "en-US-AndrewMultilingualNeural";
+  const voice = options.voice || process.env.TTS_VOICE || "en-US-ChristopherNeural";
   const timeoutMs = options.timeoutMs || 25000;
 
   // Ensure output directory exists

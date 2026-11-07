@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { usePipeline } from '../3_hooks/usePipeline';
 import { Header } from '../4_components/Header';
+import { LandingPage } from '../4_components/LandingPage';
 import { AuthModal } from '../4_components/AuthModal';
 import { RepoInputBar } from '../4_components/RepoInputBar';
 import { JobStatusBar } from '../4_components/JobStatusBar';
@@ -15,7 +16,8 @@ import { DiffModal } from '../4_components/DiffModal';
 import { Footer } from '../4_components/Footer';
 
 export default function PipelinePage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const [view, setView] = useState<"landing" | "studio">("landing");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authReason, setAuthReason] = useState<string | undefined>();
 
@@ -35,6 +37,13 @@ export default function PipelinePage() {
     copyLogs,
   } = usePipeline();
 
+  // If user signs in, smoothly transition into the Studio Workspace
+  useEffect(() => {
+    if (session?.user) {
+      setView("studio");
+    }
+  }, [session]);
+
   const handleAnalyzeRepo = (url: string, skipRender?: boolean) => {
     if (!session?.user) {
       setAuthReason("Sign in with GitHub or Google to generate an AI walkthrough video.");
@@ -44,6 +53,18 @@ export default function PipelinePage() {
     analyzeRepo(url, skipRender);
   };
 
+  // 1. Initial / Unauthenticated Gateway: The Landing Page
+  if (view === "landing" && !session?.user) {
+    return (
+      <LandingPage
+        onEnterStudio={() => setView("studio")}
+        isAuthenticated={false}
+        sampleVideoUrl={job.videoUrl}
+      />
+    );
+  }
+
+  // 2. Authenticated / Studio View: Codebase Walkthrough Studio
   return (
     <>
       {/* Fixed Desktop Header with Auth & Quota */}
@@ -61,6 +82,18 @@ export default function PipelinePage() {
             <div className="absolute top-1/2 -right-32 w-[30rem] h-[30rem] rounded-full bg-tertiary-container/10 blur-[140px] pointer-events-none"></div>
 
             <div className="w-full flex flex-col gap-space-lg">
+              {/* Back to Landing Page link for quick overview */}
+              <div className="flex items-center justify-between text-xs text-gray-400 font-mono">
+                <button
+                  onClick={() => setView("landing")}
+                  className="flex items-center gap-1.5 hover:text-white transition-colors py-1 px-2.5 rounded-lg bg-surface-container-high border border-white/5"
+                >
+                  <span className="material-symbols-outlined text-sm">arrow_back</span>
+                  <span>View Product Overview & Demo</span>
+                </button>
+                <span className="text-gray-500">GitVideo Studio Workspace • Connected to Backend</span>
+              </div>
+
               {/* Repository Input & Quickstart Controls */}
               <RepoInputBar onAnalyzeRepo={handleAnalyzeRepo} currentRepo={job.repoName} />
 

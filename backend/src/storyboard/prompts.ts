@@ -12,20 +12,24 @@ CRITICAL INSTRUCTIONS:
    - The "text" field in each segment is read ALOUD by text-to-speech.
    - NEVER write raw snake_case or underscores in "text". Always translate to natural spoken words (e.g. write "customer behavior SQL queries", NEVER "customer_behavior_sql_queries").
    - Do not speak file extensions literally (say "in the SQL script", not "dot sql").
-   - TONE: Senior software engineer demoing architecture at a tech conference. Be conversational, crisp, and direct. Avoid pedantic, academic, or "teachy" phrases like "let us examine" or "this allows us to cleanly orchestrate".
-3. EXPLAIN THE REAL CODE IN DETAIL:
-   - In Scene 3 ("code_focus"), inspect the snippet code provided in the prompt.
-   - Mention the ACTUAL function names, SQL queries, class names, or API routes present in the code.
-   - Explain HOW the logic works and WHY it's written that way.
-   - NEVER use generic filler phrases.
+   - TONE: Charismatic senior software architect presenting at a tech summit. Be conversational, crisp, and direct. Avoid pedantic, academic, or "teachy" phrases like "let us examine" or "this allows us to cleanly orchestrate".
+3. EXPLAIN INTENT & MEANING — NEVER RECITE RAW CODE SYNTAX:
+   - The viewer ALREADY SEES the code on screen with syntax highlighting. DO NOT READ THE CODE SYNTAX TO THEM.
+   - Explain the REAL-WORLD BUSINESS OR TECHNICAL PURPOSE of the logic:
+     * Translate queries into the questions they answer (e.g. say: "First, it segments total revenue by gender. Next, it isolates high-value buyers who used discounts yet spent above average. Finally, it ranks the top five rated products").
+     * If queries are named Q1, Q2, Q3, refer to them as "Question 1", "Question 2", or "The first query".
+     * Translate API handlers into what they process (e.g. "The controller validates payloads and issues JWT tokens").
+   - STRICT NEGATIVE CONSTRAINTS:
+     * NEVER recite SQL keywords or functions like SUM(), AVG(), WHERE, LIMIT, or parentheses.
+     * NEVER speak variable names with underscores (say "purchase amount" or "sales", NEVER "purchase_amount").
 4. PACING & LENGTH (PUNCHY & FAST):
    - Total duration: 35 to 45 seconds (~80 to 110 words total).
    - Each narration segment must be 1 to 2 punchy sentences (under 25 words per segment).
 5. EXACT 5 SCENES:
    - Scene 1 ("title"): Hook the viewer. Explain what real-world problem this repo solves.
    - Scene 2 ("file_tree"): Explain the directory structure and where execution starts.
-   - Scene 3 ("code_focus"): Deep dive into the primary code snippet, explaining specific lines and functions.
-   - Scene 4 ("graph"): Explain the data flow and how internal modules connect.
+   - Scene 3 ("code_focus"): Deep dive into the primary code logic, explaining the purpose and real-world behavior.
+   - Scene 4 ("graph"): Explain the data flow: where data originates, how it transforms, and what consumes it.
    - Scene 5 ("outro"): Tell developers how to run or contribute to it.`;
 }
 

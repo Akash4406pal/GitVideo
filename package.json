@@ -1,0 +1,14 @@
+{
+  "name": "gitvideo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GitVideo: AI-Powered Codebase-to-Video Engine",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "build": "npm --prefix backend run build && npm --prefix frontend run build",
+    "start": "npm --prefix frontend run start",
+    "analyze": "npm --prefix backend run analyze"
+  }
+}
+

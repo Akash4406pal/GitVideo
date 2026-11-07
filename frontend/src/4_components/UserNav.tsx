@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
+import { SignOutConfirmModal } from "./SignOutConfirmModal";
 
 interface UserNavProps {
   onOpenAuth: () => void;
@@ -10,6 +11,7 @@ interface UserNavProps {
 export function UserNav({ onOpenAuth }: UserNavProps) {
   const { data: session, status } = useSession();
   const [quota, setQuota] = useState<{ remaining: number; total: number } | null>(null);
+  const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
 
   useEffect(() => {
     if (session?.user) {
@@ -52,51 +54,67 @@ export function UserNav({ onOpenAuth }: UserNavProps) {
         .toUpperCase()
     : "U";
 
+  const handleConfirmSignOut = () => {
+    setIsSignOutModalOpen(false);
+    signOut({ callbackUrl: window.location.origin });
+  };
+
   return (
-    <div className="flex items-center gap-3">
-      {/* Quota Badge */}
-      <div
-        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-medium border ${
-          (quota?.remaining ?? 3) > 0
-            ? "bg-purple-500/10 text-purple-400 border-purple-500/30"
-            : "bg-red-500/10 text-red-400 border-red-500/30"
-        }`}
-        title="Daily Video Generation Credits"
-      >
-        <span className="material-symbols-outlined text-sm">bolt</span>
-        <span>
-          {quota ? `${quota.remaining}/${quota.total}` : "3/3"} Videos Left
-        </span>
-      </div>
-
-      {/* User Info & Avatar */}
-      <div className="flex items-center gap-2 pl-1">
-        {user.image ? (
-          <img
-            src={user.image}
-            alt={user.name || "User Avatar"}
-            className="w-7 h-7 rounded-full border border-[#30363d] object-cover"
-          />
-        ) : (
-          <div className="w-7 h-7 rounded-full bg-purple-600 text-white font-bold text-xs flex items-center justify-center">
-            {initials}
-          </div>
-        )}
-
-        <span className="hidden sm:inline text-xs font-medium text-gray-300 max-w-[120px] truncate">
-          {user.name?.split(" ")[0] || "User"}
-        </span>
-
-        {/* Sign Out Button */}
-        <button
-          onClick={() => signOut()}
-          className="text-gray-400 hover:text-red-400 transition-colors p-1"
-          title="Sign Out"
+    <>
+      <div className="flex items-center gap-3">
+        {/* Quota Badge */}
+        <div
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-medium border ${
+            (quota?.remaining ?? 3) > 0
+              ? "bg-purple-500/10 text-purple-400 border-purple-500/30"
+              : "bg-red-500/10 text-red-400 border-red-500/30"
+          }`}
+          title="Daily Video Generation Credits"
         >
-          <span className="material-symbols-outlined text-base">logout</span>
-        </button>
+          <span className="material-symbols-outlined text-sm">bolt</span>
+          <span>
+            {quota ? `${quota.remaining}/${quota.total}` : "3/3"} Videos Left
+          </span>
+        </div>
+
+        {/* User Info & Avatar */}
+        <div className="flex items-center gap-2 pl-1">
+          {user.image ? (
+            <img
+              src={user.image}
+              alt={user.name || "User Avatar"}
+              className="w-7 h-7 rounded-full border border-[#30363d] object-cover"
+            />
+          ) : (
+            <div className="w-7 h-7 rounded-full bg-purple-600 text-white font-bold text-xs flex items-center justify-center">
+              {initials}
+            </div>
+          )}
+
+          <span className="hidden sm:inline text-xs font-medium text-gray-300 max-w-[120px] truncate">
+            {user.name?.split(" ")[0] || "User"}
+          </span>
+
+          {/* Sign Out Button (Opens Confirmation Modal) */}
+          <button
+            onClick={() => setIsSignOutModalOpen(true)}
+            className="text-gray-400 hover:text-red-400 transition-colors p-1"
+            title="Sign Out"
+            aria-label="Sign Out"
+          >
+            <span className="material-symbols-outlined text-base">logout</span>
+          </button>
+        </div>
       </div>
-    </div>
+
+      {/* Confirmation Modal to prevent accidental logouts */}
+      <SignOutConfirmModal
+        isOpen={isSignOutModalOpen}
+        onClose={() => setIsSignOutModalOpen(false)}
+        onConfirm={handleConfirmSignOut}
+        userName={user.name}
+      />
+    </>
   );
 }
 

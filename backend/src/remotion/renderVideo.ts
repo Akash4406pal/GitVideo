@@ -63,6 +63,13 @@ export async function renderWalkthroughVideo(
   const outputPath = path.resolve(options.outputVideoPath || "./dist/walkthrough.mp4");
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
+  // On Windows, unlink pre-existing output file so Remotion rename doesn't collide
+  try {
+    if (fs.existsSync(outputPath)) {
+      fs.unlinkSync(outputPath);
+    }
+  } catch {}
+
   const indexPath = path.resolve(__dirname, "index.js");
   const entryPoint = fs.existsSync(indexPath) ? indexPath : path.resolve(__dirname, "index.ts");
 
@@ -130,28 +137,47 @@ export async function renderWalkthroughVideo(
   console.log(`\n🎬 Rendering frames to MP4 in parallel...`);
   let lastLoggedPercent = -1;
 
-  await renderMedia({
-    composition,
-    serveUrl: bundleLocation,
-    codec: "h264",
-    outputLocation: outputPath,
-    inputProps,
-    browserExecutable,
-    concurrency: renderConcurrency,
-    x264Preset: "veryfast",
-    crf: 22,
-    frameRange,
-    onProgress: ({ renderedFrames, progress }) => {
-      const percent = Math.floor(progress * 100);
-      if (percent !== lastLoggedPercent && percent % 10 === 0) {
-        lastLoggedPercent = percent;
-        process.stdout.write(`\r   Rendering: ${percent}% (${renderedFrames} frames rendered)`);
-        if (options.onProgress) {
-          options.onProgress(percent);
+  try {
+    await renderMedia({
+      composition,
+      serveUrl: bundleLocation,
+      codec: "h264",
+      outputLocation: outputPath,
+      inputProps,
+      browserExecutable,
+      concurrency: renderConcurrency,
+      x264Preset: "veryfast",
+      crf: 22,
+      frameRange,
+      onProgress: ({ renderedFrames, progress }) => {
+        const percent = Math.floor(progress * 100);
+        if (percent !== lastLoggedPercent && percent % 10 === 0) {
+          lastLoggedPercent = percent;
+          process.stdout.write(`\r   Rendering: ${percent}% (${renderedFrames} frames rendered)`);
+          if (options.onProgress) {
+            options.onProgress(percent);
+          }
         }
+      },
+    });
+  } catch (renderErr: any) {
+    // Windows file-lock recovery: if rename failed, pick up the rendered in-progress file
+    const dir = path.dirname(outputPath);
+    const inProgressFiles = fs.readdirSync(dir).filter((f) => f.includes(".remotion-in-progress"));
+    if (inProgressFiles.length > 0) {
+      const inProgressPath = path.join(dir, inProgressFiles[0]);
+      try {
+        if (fs.existsSync(outputPath)) {
+          fs.unlinkSync(outputPath);
+        }
+        fs.renameSync(inProgressPath, outputPath);
+      } catch {
+        // keep rendered in progress if rename still locked
       }
-    },
-  });
+    } else {
+      throw renderErr;
+    }
+  }
 
   console.log(`\n\n✔ Video rendering complete!`);
   console.log(`   - File: ${outputPath}`);
