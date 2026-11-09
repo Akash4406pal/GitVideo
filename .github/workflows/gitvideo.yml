@@ -1,0 +1,53 @@
+name: GitVideo Codebase Walkthrough
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      skip_render:
+        description: 'Skip full Remotion MP4 render (generate Architecture & Storyboard only)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  build-walkthrough:
+    name: Generate Codebase Video & ARCHITECTURE.md
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js 20+
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: |
+          npm --prefix backend ci
+
+      - name: Run GitVideo Engine
+        env:
+          BHARATCODE_API_KEY: ${{ secrets.BHARATCODE_API_KEY }}
+          BHARATCODE_BASE_URL: "https://bharatcode.ai/api/model/v1"
+          BHARATCODE_MODEL: "qwen-3.8-27b"
+        run: |
+          node backend/dist/index.js . ./dist ${{ inputs.skip_render && '--skip-render' || '' }}
+
+      - name: Upload Walkthrough Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitvideo-walkthrough-artifacts
+          path: |
+            dist/ARCHITECTURE.md
+            dist/storyboard.json
+            dist/skeleton.json
+            dist/walkthrough.mp4
+          retention-days: 14
+

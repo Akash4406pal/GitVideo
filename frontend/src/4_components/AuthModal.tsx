@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 
 interface AuthModalProps {
@@ -11,6 +11,28 @@ interface AuthModalProps {
 
 export function AuthModal({ isOpen, onClose, reason }: AuthModalProps) {
   const [isSigningIn, setIsSigningIn] = useState<string | null>(null);
+
+  // Keyboard Escape listener
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isSigningIn) {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, isSigningIn, onClose]);
+
+  // Lock body scroll while modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -24,13 +46,24 @@ export function AuthModal({ isOpen, onClose, reason }: AuthModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-md bg-[#0d1117] border border-[#30363d] rounded-2xl shadow-2xl p-6 sm:p-8 text-white">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="auth-modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isSigningIn) {
+          onClose();
+        }
+      }}
+    >
+      <div className="relative w-full max-w-md bg-[#0b0e14] border border-white/10 rounded-2xl shadow-2xl p-6 sm:p-8 text-white">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/5"
+          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/5 cursor-pointer"
           aria-label="Close"
+          disabled={Boolean(isSigningIn)}
         >
           <span className="material-symbols-outlined text-xl">close</span>
         </button>
@@ -40,7 +73,7 @@ export function AuthModal({ isOpen, onClose, reason }: AuthModalProps) {
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400 mb-3 shadow-lg shadow-purple-500/10">
             <span className="material-symbols-outlined text-2xl">shield_person</span>
           </div>
-          <h2 className="text-2xl font-bold tracking-tight">Verified Sign In</h2>
+          <h2 id="auth-modal-title" className="text-2xl font-bold tracking-tight">Verified Sign In</h2>
           <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">
             {reason || "Sign in with GitHub or Google to access GitVideo and generate high-fidelity AI codebase walkthroughs."}
           </p>
@@ -63,7 +96,7 @@ export function AuthModal({ isOpen, onClose, reason }: AuthModalProps) {
           <button
             onClick={() => handleOAuthSignIn("github")}
             disabled={Boolean(isSigningIn)}
-            className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl bg-[#21262d] hover:bg-[#30363d] border border-[#363b42] text-white font-medium text-sm transition-all shadow-sm hover:scale-[1.01] disabled:opacity-60 cursor-pointer"
+            className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl bg-[#161b22] hover:bg-[#21262d] border border-white/10 text-white font-medium text-sm transition-all shadow-sm hover:scale-[1.01] disabled:opacity-60 cursor-pointer"
           >
             {isSigningIn === "github" ? (
               <span className="material-symbols-outlined text-lg animate-spin">refresh</span>
@@ -96,7 +129,7 @@ export function AuthModal({ isOpen, onClose, reason }: AuthModalProps) {
         </div>
 
         {/* Session Policy Info */}
-        <div className="mt-6 pt-4 border-t border-[#30363d]/70 flex items-center justify-between text-[11px] text-gray-500">
+        <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between text-[11px] text-gray-500">
           <div className="flex items-center gap-1.5">
             <span className="material-symbols-outlined text-[14px] text-emerald-400">schedule</span>
             <span>2-day persistent JWT session</span>

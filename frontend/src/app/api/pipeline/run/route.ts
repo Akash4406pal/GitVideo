@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const userId = (session.user as any).id || session.user.email || "dev_user";
+  const userId = session.user.id || session.user.email || "dev_user";
   const clientIp = req.headers.get("x-forwarded-for") || "127.0.0.1";
 
   // 2. Sliding-Window Rate Limiting
@@ -39,7 +39,23 @@ export async function POST(req: NextRequest) {
     body = await req.json();
   } catch {}
 
-  const repoUrl = body.repoUrl?.trim() || ".";
+  const rawUrl = body.repoUrl?.trim() || ".";
+  
+  // Security: Strict validation of repository target to prevent shell/argument injection
+  const isGitHubUrl = /^https:\/\/github\.com\/[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+(?:\.git)?$/.test(rawUrl);
+  const isSafeLocalPath = /^(\.|\.\/|\.\.\/?|[a-zA-Z0-9_\-./\\]+)$/.test(rawUrl) && !/[;&|`$<>]/.test(rawUrl);
+
+  if (!isGitHubUrl && !isSafeLocalPath) {
+    return NextResponse.json(
+      {
+        error: "Invalid repository URL",
+        message: "Please provide a valid public GitHub repository URL (e.g., https://github.com/expressjs/express).",
+      },
+      { status: 400 }
+    );
+  }
+
+  const repoUrl = rawUrl;
   const skipRender = Boolean(body.skipRender);
 
   // 3. Daily Quota Check (Fast mode / skip-render uses fewer/free credits)
@@ -89,73 +105,94 @@ export async function POST(req: NextRequest) {
       // Initial connecting event
       sendEvent("start", { repoUrl, skipRender, timestamp: new Date().toISOString() });
 
-      // Build process args - prefer compiled dist/index.js for max speed and Windows reliability
+      // Build process args - locate compiled dist/index.js or local tsx cli
       const distIndex = path.join(backendDir, "dist", "index.js");
+      const tsxCli = path.join(backendDir, "node_modules", "tsx", "dist", "cli.mjs");
       const useCompiled = fs.existsSync(distIndex);
 
-      const command = useCompiled ? "node" : (process.platform === "win32" ? "npx.cmd" : "npx");
+      const command = process.execPath; // Invoking node binary directly is immune to shell injection
       const procArgs = useCompiled
         ? [distIndex, repoUrl, path.join(backendDir, "dist")]
-        : ["tsx", "src/index.ts", repoUrl, path.join(backendDir, "dist")];
+        : [tsxCli, path.join(backendDir, "src", "index.ts"), repoUrl, path.join(backendDir, "dist")];
 
       if (skipRender) {
         procArgs.push("--skip-render");
       }
 
+      // Whitelist only safe environment variables - never expose NextAuth or OAuth secrets
+      const safeEnv: NodeJS.ProcessEnv = {
+        PATH: process.env.PATH || "",
+        NODE_ENV: process.env.NODE_ENV || "development",
+        BHARATCODE_API_KEY: process.env.BHARATCODE_API_KEY || "",
+        BHARATCODE_BASE_URL: process.env.BHARATCODE_BASE_URL || "https://bharatcode.ai/api/model/v1",
+        BHARATCODE_MODEL: process.env.BHARATCODE_MODEL || "qwen-3.8-27b",
+        CACHE_DIR: process.env.CACHE_DIR || path.join(backendDir, ".cache"),
+        OUTPUT_DIR: process.env.OUTPUT_DIR || path.join(backendDir, "dist"),
+        SYSTEMROOT: process.env.SYSTEMROOT || "",
+        COMSPEC: process.env.COMSPEC || "",
+        PATHEXT: process.env.PATHEXT || "",
+        TEMP: process.env.TEMP || "",
+        TMP: process.env.TMP || "",
+      };
+
       const child = spawn(command, procArgs, {
         cwd: backendDir,
-        env: { ...process.env },
-        shell: true,
+        env: safeEnv,
+        stdio: ["ignore", "pipe", "pipe"],
       });
 
-      child.stdout.on("data", (data: Buffer) => {
-        const text = data.toString();
-        const lines = text.split(/\r?\n/).filter(Boolean);
+      if (child.stdout) {
+        child.stdout.on("data", (data: Buffer) => {
+          const text = data.toString();
+          const lines = text.split(/\r?\n/).filter(Boolean);
 
-        for (const line of lines) {
-          sendEvent("log", {
-            line,
-            timestamp: new Date().toLocaleTimeString(),
-          });
-
-          // Detect stage transitions from stdout
-          if (line.includes("Ingesting repository")) {
-            sendEvent("stage", { stageIndex: 1, name: "ingest", percent: 15 });
-          } else if (line.includes("Analyzing AST")) {
-            sendEvent("stage", { stageIndex: 2, name: "analyze", percent: 35 });
-          } else if (line.includes("Step 2:") || line.includes("Storyboard Generation")) {
-            sendEvent("stage", { stageIndex: 3, name: "storyboard", percent: 55 });
-          } else if (line.includes("Step 3:") || line.includes("Voiceover & Audio Synthesis")) {
-            sendEvent("stage", { stageIndex: 4, name: "tts", percent: 75 });
-          } else if (line.includes("Step 4:") || line.includes("Remotion Video Rendering")) {
-            sendEvent("stage", { stageIndex: 5, name: "render", percent: 85 });
-          } else if (line.includes("Rendering:") && line.includes("%")) {
-            const match = line.match(/Rendering:\s*(\d+)%/);
-            if (match) {
-              const renderPercent = parseInt(match[1], 10);
-              const overallPercent = Math.min(99, 85 + Math.floor(renderPercent * 0.14));
-              sendEvent("stage", { stageIndex: 5, name: "render", percent: overallPercent });
-            }
-          } else if (line.includes("Completed Successfully")) {
-            sendEvent("stage", { stageIndex: 5, name: "complete", percent: 100 });
-            sendEvent("complete", {
-              videoUrl: skipRender ? null : "/api/video",
-              success: true,
+          for (const line of lines) {
+            sendEvent("log", {
+              line,
+              timestamp: new Date().toLocaleTimeString(),
             });
+
+            // Detect stage transitions from stdout
+            if (line.includes("Ingesting repository")) {
+              sendEvent("stage", { stageIndex: 1, name: "ingest", percent: 15 });
+            } else if (line.includes("Analyzing AST")) {
+              sendEvent("stage", { stageIndex: 2, name: "analyze", percent: 35 });
+            } else if (line.includes("Step 2:") || line.includes("Storyboard Generation")) {
+              sendEvent("stage", { stageIndex: 3, name: "storyboard", percent: 55 });
+            } else if (line.includes("Step 3:") || line.includes("Voiceover & Audio Synthesis")) {
+              sendEvent("stage", { stageIndex: 4, name: "tts", percent: 75 });
+            } else if (line.includes("Step 4:") || line.includes("Remotion Video Rendering")) {
+              sendEvent("stage", { stageIndex: 5, name: "render", percent: 85 });
+            } else if (line.includes("Rendering:") && line.includes("%")) {
+              const match = line.match(/Rendering:\s*(\d+)%/);
+              if (match) {
+                const renderPercent = parseInt(match[1], 10);
+                const overallPercent = Math.min(99, 85 + Math.floor(renderPercent * 0.14));
+                sendEvent("stage", { stageIndex: 5, name: "render", percent: overallPercent });
+              }
+            } else if (line.includes("Completed Successfully")) {
+              sendEvent("stage", { stageIndex: 5, name: "complete", percent: 100 });
+              sendEvent("complete", {
+                videoUrl: skipRender ? null : "/api/video",
+                success: true,
+              });
+            }
           }
-        }
-      });
-
-      child.stderr.on("data", (data: Buffer) => {
-        const text = data.toString();
-        sendEvent("log", {
-          line: `[stderr] ${text}`,
-          timestamp: new Date().toLocaleTimeString(),
-          isError: true,
         });
-      });
+      }
 
-      child.on("close", (code) => {
+      if (child.stderr) {
+        child.stderr.on("data", (data: Buffer) => {
+          const text = data.toString();
+          sendEvent("log", {
+            line: `[stderr] ${text}`,
+            timestamp: new Date().toLocaleTimeString(),
+            isError: true,
+          });
+        });
+      }
+
+      child.on("close", (code: number | null) => {
         cleanup();
         if (code !== 0) {
           sendEvent("error", { code, message: `Pipeline process exited with code ${code}` });
@@ -164,7 +201,7 @@ export async function POST(req: NextRequest) {
         controller.close();
       });
 
-      child.on("error", (err) => {
+      child.on("error", (err: Error) => {
         cleanup();
         sendEvent("error", { message: err.message });
         controller.close();

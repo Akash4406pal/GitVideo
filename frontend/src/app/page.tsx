@@ -14,12 +14,90 @@ import { TelemetryTerminal } from '../4_components/TelemetryTerminal';
 import { AstGraphPreview } from '../4_components/AstGraphPreview';
 import { ShowcaseGallery } from '../4_components/ShowcaseGallery';
 import { DiffModal } from '../4_components/DiffModal';
+import { StoryboardEditor, EditableStoryboard } from '../4_components/StoryboardEditor';
 import { Footer } from '../4_components/Footer';
+
+const DEFAULT_STORYBOARD: EditableStoryboard = {
+  repoName: "GitVideo",
+  targetDurationSec: 60,
+  estimatedDurationSec: 48,
+  totalWordCount: 110,
+  tone: "engaging",
+  scenes: [
+    {
+      id: "scene_1",
+      sceneNumber: 1,
+      type: "title",
+      title: "1. Hook & Architectural Introduction",
+      durationEstimateSec: 9,
+      segments: [
+        {
+          id: "seg_1_1",
+          text: "Welcome to GitVideo, an AI-powered engine turning GitHub codebases into verified video walkthroughs.",
+        },
+      ],
+    },
+    {
+      id: "scene_2",
+      sceneNumber: 2,
+      type: "file_tree",
+      title: "2. Directory Structure & Entrypoints",
+      durationEstimateSec: 10,
+      segments: [
+        {
+          id: "seg_2_1",
+          text: "The application is structured into a Node.js backend engine and a Next.js 14 App Router studio workspace.",
+        },
+      ],
+    },
+    {
+      id: "scene_3",
+      sceneNumber: 3,
+      type: "code_focus",
+      title: "3. Core Code Implementation",
+      durationEstimateSec: 14,
+      segments: [
+        {
+          id: "seg_3_1",
+          text: "Inspecting the AST extractor: imports and exports are verified with exact line numbers and zero hallucination.",
+          focus: { snippetId: "s_1", highlightLines: [1, 2, 3] },
+        },
+      ],
+    },
+    {
+      id: "scene_4",
+      sceneNumber: 4,
+      type: "graph",
+      title: "4. Dependency & Data Flow",
+      durationEstimateSec: 8,
+      segments: [
+        {
+          id: "seg_4_1",
+          text: "Analyzing module dependencies shows data flowing cleanly from shallow ingestion into the Remotion renderer.",
+        },
+      ],
+    },
+    {
+      id: "scene_5",
+      sceneNumber: 5,
+      type: "outro",
+      title: "5. Conclusion & Quickstart",
+      durationEstimateSec: 7,
+      segments: [
+        {
+          id: "seg_5_1",
+          text: "Clone the repository to get started, or generate your own demo in under 60 seconds with GitVideo.",
+        },
+      ],
+    },
+  ],
+};
 
 export default function PipelinePage() {
   const { data: session } = useSession();
   const [view, setView] = useState<"landing" | "studio">("landing");
   const [activeSection, setActiveSection] = useState<StudioSection>("ingest");
+  const [studioTab, setStudioTab] = useState<"video" | "storyboard">("video");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authReason, setAuthReason] = useState<string | undefined>();
   const [activeVideoOverride, setActiveVideoOverride] = useState<string | null>(null);
@@ -47,6 +125,11 @@ export default function PipelinePage() {
   useEffect(() => {
     if (session?.user) {
       setView("studio");
+    } else if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("view") === "studio") {
+        setView("studio");
+      }
     }
   }, [session]);
 
@@ -185,8 +268,49 @@ export default function PipelinePage() {
               {/* ======================================================== */}
               {/* Section 2: Video Studio (#studio)                       */}
               {/* ======================================================== */}
-              <section id="studio" className="scroll-mt-24">
-                {effectiveVideoUrl ? (
+              <section id="studio" className="scroll-mt-24 flex flex-col gap-4">
+                {/* View Mode Switcher */}
+                <div className="flex items-center justify-between pb-2">
+                  <div className="flex items-center gap-2 p-1 rounded-xl bg-surface-container-high border border-white/5 text-xs font-mono">
+                    <button
+                      onClick={() => setStudioTab("video")}
+                      className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                        studioTab === "video"
+                          ? "bg-purple-600 text-white font-semibold shadow-md shadow-purple-600/30"
+                          : "text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">play_circle</span>
+                      <span>Video Player Viewport</span>
+                    </button>
+                    <button
+                      onClick={() => setStudioTab("storyboard")}
+                      className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                        studioTab === "storyboard"
+                          ? "bg-purple-600 text-white font-semibold shadow-md shadow-purple-600/30"
+                          : "text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">edit_note</span>
+                      <span>Storyboard Studio & Script Editor</span>
+                    </button>
+                  </div>
+
+                  <span className="text-[11px] font-mono text-gray-500 hidden sm:inline">
+                    {studioTab === "video" ? "720p 30fps H.264" : "5 Scenes Grounded in Code"}
+                  </span>
+                </div>
+
+                {studioTab === "storyboard" ? (
+                  <StoryboardEditor
+                    initialStoryboard={DEFAULT_STORYBOARD}
+                    onApproveAndRender={(editedSb, isShorts) => {
+                      setStudioTab("video");
+                      handleAnalyzeRepo(job.repoName, false);
+                    }}
+                    isRendering={isRunning}
+                  />
+                ) : effectiveVideoUrl ? (
                   <VideoPlayerCard
                     videoUrl={effectiveVideoUrl}
                     repoName={job.repoName}

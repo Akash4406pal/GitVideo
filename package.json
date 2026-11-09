@@ -8,7 +8,9 @@
     "dev:backend": "npm --prefix backend run dev",
     "build": "npm --prefix backend run build && npm --prefix frontend run build",
     "start": "npm --prefix frontend run start",
-    "analyze": "npm --prefix backend run analyze"
+    "analyze": "npm --prefix backend run analyze",
+    "render": "npm --prefix backend run render",
+    "demo": "npm --prefix backend run render:quick"
   }
 }
 

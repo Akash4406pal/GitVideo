@@ -27,6 +27,8 @@ Most AI video generators hallucinate mock code or inaccurate folder structures. 
 1. **Zero Hallucinated Code:** All snippets shown on screen are sliced directly from real repository files with exact line numbers and preserved indentation.
 2. **Verified Storyboards:** Every file, class, function, or route referenced by the LLM is validated against the static `skeleton.json`. If a reference is invalid, the script is regenerated or corrected before rendering.
 3. **Deterministic Visual Timing:** Audio clips are generated per beat, driving visual transitions (code zooms, syntax highlighting, and graph nodes) with millisecond precision.
+4. **Interactive Storyboard Studio:** Review, edit talking points, and swap code snippet focus before rendering compute is committed.
+5. **Multi-Format Export:** Render standard 16:9 Landscape for documentation, or 9:16 Vertical for YouTube Shorts, Reels, and TikTok in one click.
 
 ---
 

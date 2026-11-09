@@ -6,6 +6,7 @@ import { buildSkeleton } from "./analyzer/skeletonBuilder.js";
 import { generateStoryboard } from "./storyboard/storyboardGenerator.js";
 import { synthesizeStoryboardAudio } from "./tts/audioSynthesizer.js";
 import { renderWalkthroughVideo } from "./remotion/renderVideo.js";
+import { generateArchitectureDoc } from "./analyzer/architectureDoc.js";
 import { config } from "./config/env.js";
 
 dotenv.config();
@@ -14,6 +15,7 @@ async function main() {
   const args = process.argv.slice(2);
   const skipRender = args.includes("--skip-render");
   const previewOnly = args.includes("--preview");
+  const isShorts = args.includes("--shorts");
   const filteredArgs = args.filter((a) => !a.startsWith("--"));
 
   const targetSource = filteredArgs[0] || ".";
@@ -70,15 +72,22 @@ async function main() {
     fs.writeFileSync(storyboardPath, JSON.stringify(storyboard, null, 2), "utf-8");
     console.log(`✔ Enriched Storyboard saved to: ${storyboardPath}`);
 
+    // Generate executive ARCHITECTURE.md blueprint
+    const architectureDocPath = path.join(outputDir, "ARCHITECTURE.md");
+    const architectureDoc = generateArchitectureDoc(skeleton, storyboard);
+    fs.writeFileSync(architectureDocPath, architectureDoc, "utf-8");
+    console.log(`✔ Architecture Blueprint saved to: ${architectureDocPath}`);
+
     // ----------------------------------------------------
     // Step 4: Remotion Video Composition & Rendering
     // ----------------------------------------------------
     let videoPath: string | null = null;
     if (!skipRender) {
-      console.log(`\nStep 4/4: Remotion Video Rendering (MP4 720p 30fps)...`);
+      console.log(`\nStep 4/4: Remotion Video Rendering (${isShorts ? "9:16 Shorts 720x1280" : "16:9 Landscape 1280x720"} 30fps)...`);
       videoPath = await renderWalkthroughVideo(skeleton, storyboard, {
-        outputVideoPath: path.join(outputDir, "walkthrough.mp4"),
+        outputVideoPath: path.join(outputDir, isShorts ? "walkthrough_shorts.mp4" : "walkthrough.mp4"),
         previewOnly,
+        compositionId: isShorts ? "GitVideoShorts" : "GitVideoWalkthrough",
       });
     } else {
       console.log(`\nStep 4/4: Video rendering skipped via --skip-render`);

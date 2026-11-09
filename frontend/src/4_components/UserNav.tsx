@@ -12,6 +12,7 @@ export function UserNav({ onOpenAuth }: UserNavProps) {
   const { data: session, status } = useSession();
   const [quota, setQuota] = useState<{ remaining: number; total: number } | null>(null);
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   useEffect(() => {
     if (session?.user) {
@@ -54,9 +55,15 @@ export function UserNav({ onOpenAuth }: UserNavProps) {
         .toUpperCase()
     : "U";
 
-  const handleConfirmSignOut = () => {
-    setIsSignOutModalOpen(false);
-    signOut({ callbackUrl: window.location.origin });
+  const handleConfirmSignOut = async () => {
+    try {
+      setIsSigningOut(true);
+      await signOut({ callbackUrl: "/" });
+    } catch (err) {
+      console.error("Sign out error:", err);
+      setIsSigningOut(false);
+      setIsSignOutModalOpen(false);
+    }
   };
 
   return (
@@ -110,9 +117,13 @@ export function UserNav({ onOpenAuth }: UserNavProps) {
       {/* Confirmation Modal to prevent accidental logouts */}
       <SignOutConfirmModal
         isOpen={isSignOutModalOpen}
-        onClose={() => setIsSignOutModalOpen(false)}
+        onClose={() => {
+          if (!isSigningOut) setIsSignOutModalOpen(false);
+        }}
         onConfirm={handleConfirmSignOut}
+        user={user}
         userName={user.name}
+        isSigningOut={isSigningOut}
       />
     </>
   );

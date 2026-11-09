@@ -31,38 +31,56 @@ const defaultProps: VideoProps = {
   },
 };
 
+const calculateVideoMetadata = ({ props }: { props: unknown }) => {
+  const typedProps = props as VideoProps;
+  const fps = 30;
+  let totalDurationSec = 0;
+
+  if (typedProps.storyboard?.scenes?.length) {
+    for (const scene of typedProps.storyboard.scenes) {
+      const sceneAudioSec =
+        scene.segments?.reduce(
+          (sum: number, seg: { durationSec?: number }) => sum + (seg.durationSec || 2.5),
+          0
+        ) || scene.durationEstimateSec || 10;
+      totalDurationSec += sceneAudioSec;
+    }
+  }
+
+  const durationInFrames = Math.max(90, Math.ceil((totalDurationSec || 50) * fps));
+
+  return {
+    durationInFrames,
+    props: props as Record<string, unknown>,
+  };
+};
+
 export const RemotionRoot: React.FC = () => {
   return (
-    <Composition
-      id="GitVideoWalkthrough"
-      component={MainComposition as any}
-      durationInFrames={1500}
-      fps={30}
-      width={1280}
-      height={720}
-      defaultProps={defaultProps as Record<string, unknown>}
-      calculateMetadata={({ props }) => {
-        const typedProps = props as unknown as VideoProps;
-        const fps = 30;
-        let totalDurationSec = 0;
+    <>
+      {/* 16:9 Landscape Composition (YouTube / Docs / Website) */}
+      <Composition
+        id="GitVideoWalkthrough"
+        component={MainComposition as any}
+        durationInFrames={1500}
+        fps={30}
+        width={1280}
+        height={720}
+        defaultProps={defaultProps as Record<string, unknown>}
+        calculateMetadata={calculateVideoMetadata}
+      />
 
-        if (typedProps.storyboard?.scenes?.length) {
-          for (const scene of typedProps.storyboard.scenes) {
-            const sceneAudioSec = scene.segments?.reduce(
-              (sum: number, seg: { durationSec?: number }) => sum + (seg.durationSec || 2.5),
-              0
-            ) || scene.durationEstimateSec || 10;
-            totalDurationSec += sceneAudioSec;
-          }
-        }
-
-        const durationInFrames = Math.max(90, Math.ceil((totalDurationSec || 50) * fps));
-
-        return {
-          durationInFrames,
-          props: props as Record<string, unknown>,
-        };
-      }}
-    />
+      {/* 9:16 Vertical Composition (YouTube Shorts / TikTok / Reels / X) */}
+      <Composition
+        id="GitVideoShorts"
+        component={MainComposition as any}
+        durationInFrames={1500}
+        fps={30}
+        width={720}
+        height={1280}
+        defaultProps={defaultProps as Record<string, unknown>}
+        calculateMetadata={calculateVideoMetadata}
+      />
+    </>
   );
 };

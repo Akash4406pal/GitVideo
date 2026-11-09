@@ -62,7 +62,7 @@ module.exports = {
         DEFAULT: "0.125rem",
         lg: "0.25rem",
         xl: "0.5rem",
-        full: "0.75rem",
+        full: "9999px",
       },
       spacing: {
         "space-2xl": "3.5rem",
@@ -104,6 +104,15 @@ module.exports = {
         "body-lg": ["16px", { lineHeight: "24px", letterSpacing: "-0.01em", fontWeight: "400" }],
         "label-uppercase": ["10px", { lineHeight: "14px", letterSpacing: "0.08em", fontWeight: "600" }],
         "headline-md": ["18px", { lineHeight: "26px", letterSpacing: "-0.015em", fontWeight: "600" }],
+      },
+      keyframes: {
+        "fade-in": {
+          "0%": { opacity: "0", transform: "scale(0.97)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
+      },
+      animation: {
+        "fade-in": "fade-in 0.15s ease-out forwards",
       },
     },
   },

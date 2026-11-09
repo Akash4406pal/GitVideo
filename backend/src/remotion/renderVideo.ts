@@ -52,6 +52,7 @@ function embedAudioDataUris(storyboard: Storyboard): Storyboard {
 export interface RenderOptions {
   outputVideoPath?: string;
   previewOnly?: boolean; // Renders the first ~10s chunk for rapid preview
+  compositionId?: "GitVideoWalkthrough" | "GitVideoShorts";
   onProgress?: (percent: number) => void;
 }
 
@@ -115,10 +116,11 @@ export async function renderWalkthroughVideo(
 
   const remotionPort = 8555;
 
-  console.log(`🔍 Selecting composition 'GitVideoWalkthrough'...`);
+  const compositionId = options.compositionId || "GitVideoWalkthrough";
+  console.log(`🔍 Selecting composition '${compositionId}'...`);
   const composition = await selectComposition({
     serveUrl: bundleLocation,
-    id: "GitVideoWalkthrough",
+    id: compositionId,
     inputProps,
     browserExecutable,
     port: remotionPort,

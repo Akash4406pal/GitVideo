@@ -78,7 +78,6 @@ export function usePipeline() {
   const [logs, setLogs] = useState<TelemetryLogLine[]>(INITIAL_BUFFER_LOGS);
 
   const [seconds, setSeconds] = useState(0);
-  const [millis, setMillis] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isDiffOpen, setIsDiffOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -119,20 +118,13 @@ export function usePipeline() {
     checkStatus();
   }, []);
 
-  // Timer interval while running
+  // Performance-optimized 1-second elapsed timer (eliminates 14 renders/sec)
   useEffect(() => {
     if (!isRunning) return;
 
     const interval = setInterval(() => {
-      setMillis((prev) => {
-        const nextM = prev + 7;
-        if (nextM >= 100) {
-          setSeconds((s) => s + 1);
-          return 0;
-        }
-        return nextM;
-      });
-    }, 70);
+      setSeconds((s) => s + 1);
+    }, 1000);
 
     return () => clearInterval(interval);
   }, [isRunning]);
@@ -224,7 +216,6 @@ export function usePipeline() {
     ]);
 
     setSeconds(0);
-    setMillis(0);
     setIsRunning(true);
     setIsCancelling(false);
     setApiError(null);
@@ -350,7 +341,7 @@ export function usePipeline() {
 
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
-  const formattedTimer = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(millis).padStart(2, '0')}`;
+  const formattedTimer = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 
   return {
     job,

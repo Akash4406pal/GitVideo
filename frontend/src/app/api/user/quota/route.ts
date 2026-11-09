@@ -13,7 +13,7 @@ export async function GET() {
     );
   }
 
-  const userId = (session.user as any).id || session.user.email || "dev_user";
+  const userId = session.user.id || session.user.email || "dev_user";
   const quota = QuotaAndSecurityService.getQuota(userId);
 
   return NextResponse.json({

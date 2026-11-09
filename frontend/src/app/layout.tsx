@@ -3,8 +3,8 @@ import "./globals.css";
 import { AuthProvider } from "@/5_shared/providers/AuthProvider";
 
 export const metadata: Metadata = {
-  title: "GitVideo - Codebase to Explainer Video",
-  description: "AI-powered codebase-to-video engine. Turn any GitHub repository into a cinematic walkthrough in 60 seconds.",
+  title: "GitVideo — Your Code. Your Story. Automatically.",
+  description: "AI Product Demo Studio: Connect any GitHub repository. GitVideo discovers features, synthesizes audio narration, and renders cinematic walkthrough demos in seconds.",
 };
 
 export default function RootLayout({
@@ -15,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
         <meta name="shell-type" content="mobile_tab" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
