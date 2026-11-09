@@ -6,9 +6,10 @@ import { SignOutConfirmModal } from "./SignOutConfirmModal";
 
 interface UserNavProps {
   onOpenAuth: () => void;
+  onOpenProfile?: () => void;
 }
 
-export function UserNav({ onOpenAuth }: UserNavProps) {
+export function UserNav({ onOpenAuth, onOpenProfile }: UserNavProps) {
   const { data: session, status } = useSession();
   const [quota, setQuota] = useState<{ remaining: number; total: number } | null>(null);
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
@@ -69,28 +70,33 @@ export function UserNav({ onOpenAuth }: UserNavProps) {
   return (
     <>
       <div className="flex items-center gap-3">
-        {/* Quota Badge */}
-        <div
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-medium border ${
+        {/* Quota Badge (Clickable to open Account & Usage Profile) */}
+        <button
+          onClick={onOpenProfile}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-medium border cursor-pointer hover:scale-105 transition-all ${
             (quota?.remaining ?? 3) > 0
-              ? "bg-purple-500/10 text-purple-400 border-purple-500/30"
-              : "bg-red-500/10 text-red-400 border-red-500/30"
+              ? "bg-purple-500/10 text-purple-400 border-purple-500/30 hover:bg-purple-500/20"
+              : "bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500/20"
           }`}
-          title="Daily Video Generation Credits"
+          title="Click to view daily generation quota and account settings"
         >
           <span className="material-symbols-outlined text-sm">bolt</span>
           <span>
             {quota ? `${quota.remaining}/${quota.total}` : "3/3"} Videos Left
           </span>
-        </div>
+        </button>
 
-        {/* User Info & Avatar */}
-        <div className="flex items-center gap-2 pl-1">
+        {/* User Info & Avatar (Clickable to open Account Profile) */}
+        <button
+          onClick={onOpenProfile}
+          className="flex items-center gap-2 pl-1 cursor-pointer hover:opacity-90 transition-opacity"
+          title="Account Profile & Settings"
+        >
           {user.image ? (
             <img
               src={user.image}
               alt={user.name || "User Avatar"}
-              className="w-7 h-7 rounded-full border border-[#30363d] object-cover"
+              className="w-7 h-7 rounded-full border border-purple-500/40 object-cover"
             />
           ) : (
             <div className="w-7 h-7 rounded-full bg-purple-600 text-white font-bold text-xs flex items-center justify-center">
@@ -101,17 +107,17 @@ export function UserNav({ onOpenAuth }: UserNavProps) {
           <span className="hidden sm:inline text-xs font-medium text-gray-300 max-w-[120px] truncate">
             {user.name?.split(" ")[0] || "User"}
           </span>
+        </button>
 
-          {/* Sign Out Button (Opens Confirmation Modal) */}
-          <button
-            onClick={() => setIsSignOutModalOpen(true)}
-            className="text-gray-400 hover:text-red-400 transition-colors p-1"
-            title="Sign Out"
-            aria-label="Sign Out"
-          >
-            <span className="material-symbols-outlined text-base">logout</span>
-          </button>
-        </div>
+        {/* Sign Out Button (Opens Confirmation Modal) */}
+        <button
+          onClick={() => setIsSignOutModalOpen(true)}
+          className="text-gray-400 hover:text-red-400 transition-colors p-1 cursor-pointer"
+          title="Sign Out"
+          aria-label="Sign Out"
+        >
+          <span className="material-symbols-outlined text-base">logout</span>
+        </button>
       </div>
 
       {/* Confirmation Modal to prevent accidental logouts */}

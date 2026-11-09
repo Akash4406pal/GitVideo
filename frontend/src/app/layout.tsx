@@ -28,7 +28,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="bg-surface font-body-base text-body-base text-on-surface flex flex-col min-h-screen">
+      <body className="bg-surface font-sans text-sm text-on-surface flex flex-col min-h-screen">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

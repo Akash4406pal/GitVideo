@@ -28,11 +28,13 @@ export function LandingPage({
 }: LandingPageProps) {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authReason, setAuthReason] = useState<string | undefined>();
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signup");
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [activePlan, setActivePlan] = useState<"monthly" | "annual">("monthly");
 
-  const openAuth = (reason?: string) => {
+  const openAuth = (reason?: string, mode: "signin" | "signup" = "signup") => {
     setAuthReason(reason);
+    setAuthMode(mode);
     setIsAuthModalOpen(true);
   };
 
@@ -130,13 +132,13 @@ export function LandingPage({
             ) : (
               <>
                 <button
-                  onClick={() => openAuth("Sign in to your GitVideo account")}
+                  onClick={() => openAuth("Sign in to your GitVideo account", "signin")}
                   className="px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-white transition-colors"
                 >
                   Log In
                 </button>
                 <PrimaryButton
-                  onClick={() => openAuth("Create your GitVideo account to start generating videos")}
+                  onClick={() => openAuth("Create your GitVideo account to start generating videos", "signup")}
                   icon="rocket_launch"
                   size="sm"
                 >
@@ -809,6 +811,7 @@ export function LandingPage({
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         reason={authReason}
+        initialMode={authMode}
       />
     </div>
   );

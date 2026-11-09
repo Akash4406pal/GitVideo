@@ -7,6 +7,7 @@ export type StudioSection = 'ingest' | 'telemetry' | 'studio' | 'gallery';
 
 interface HeaderProps {
   onOpenAuth?: () => void;
+  onOpenProfile?: () => void;
   activeSection?: StudioSection;
   onNavigate?: (section: StudioSection) => void;
 }
@@ -20,6 +21,7 @@ const NAV_ITEMS: { id: StudioSection; label: string; icon: string }[] = [
 
 export function Header({
   onOpenAuth = () => {},
+  onOpenProfile,
   activeSection = 'ingest',
   onNavigate,
 }: HeaderProps) {
@@ -94,7 +96,7 @@ export function Header({
 
           <div className="h-4 w-px bg-white/10 hidden sm:block"></div>
 
-          <UserNav onOpenAuth={onOpenAuth} />
+          <UserNav onOpenAuth={onOpenAuth} onOpenProfile={onOpenProfile} />
 
           {/* Mobile Menu Toggle Button */}
           <button
