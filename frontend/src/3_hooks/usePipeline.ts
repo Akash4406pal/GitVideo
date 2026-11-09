@@ -83,6 +83,7 @@ export function usePipeline() {
   const [isDiffOpen, setIsDiffOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -226,6 +227,7 @@ export function usePipeline() {
     setMillis(0);
     setIsRunning(true);
     setIsCancelling(false);
+    setApiError(null);
 
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
@@ -244,6 +246,7 @@ export function usePipeline() {
           const errData = await response.json();
           errMessage = errData.message || errData.error || errMessage;
         } catch {}
+        setApiError(errMessage);
         throw new Error(errMessage);
       }
 
@@ -355,6 +358,7 @@ export function usePipeline() {
     astMetrics,
     logs,
     formattedTimer,
+    isRunning,
     isDiffOpen,
     openDiff: () => setIsDiffOpen(true),
     closeDiff: () => setIsDiffOpen(false),
@@ -363,5 +367,7 @@ export function usePipeline() {
     analyzeRepo,
     copied,
     copyLogs,
+    apiError,
+    clearError: () => setApiError(null),
   };
 }

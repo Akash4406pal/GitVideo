@@ -56,16 +56,17 @@ export async function ingestRepository(source: string, cacheDir = ".cache/repos"
 
   const targetDir = path.resolve(cacheDir, sanitizedName);
 
-  if (fs.existsSync(targetDir)) {
-    // If already cloned, remove or reuse
-    fs.rmSync(targetDir, { recursive: true, force: true });
+  if (fs.existsSync(targetDir) && fs.existsSync(path.join(targetDir, ".git"))) {
+    console.log(`[Ingest] Using cached clone of ${source} at ${targetDir}...`);
+  } else {
+    if (fs.existsSync(targetDir)) {
+      fs.rmSync(targetDir, { recursive: true, force: true });
+    }
+    fs.mkdirSync(path.dirname(targetDir), { recursive: true });
+    console.log(`[Ingest] Cloning ${source} (shallow depth 1) to ${targetDir}...`);
+    // Use '--' separator to guarantee source is parsed as positional URL argument
+    await execFileAsync("git", ["clone", "--depth", "1", "--", source, targetDir]);
   }
-
-  fs.mkdirSync(path.dirname(targetDir), { recursive: true });
-
-  console.log(`[Ingest] Cloning ${source} (shallow depth 1) to ${targetDir}...`);
-  // Use '--' separator to guarantee source is parsed as positional URL argument
-  await execFileAsync("git", ["clone", "--depth", "1", "--", source, targetDir]);
 
   let commitSha = "unknown";
   let branch = "main";

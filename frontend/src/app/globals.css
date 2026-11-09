@@ -12,7 +12,7 @@
   }
   body {
     overscroll-behavior: none;
-    min-height: max(884px, 100dvh);
+    min-height: 100dvh;
   }
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom, 0px);

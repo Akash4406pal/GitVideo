@@ -58,9 +58,10 @@ export async function buildSkeleton(ingest: IngestResult, sourceUrl: string): Pr
 
           const ext = path.extname(fullPath).toLowerCase();
           const isCodeFile = [".ts", ".tsx", ".js", ".jsx", ".py", ".sql", ".go", ".rs", ".java", ".c", ".cpp", ".h", ".sh"].includes(ext);
+          const isExample = normalizedRelPath.toLowerCase().includes("example");
 
-          // Generate snippets for entry points, core files, or code files (up to 12 snippets max)
-          if ((isEntry || role === "core" || role === "route" || (isCodeFile && fileNodes.length < 10)) && snippets.length < 12) {
+          // Generate snippets for entry points, core files, or code files (prioritizing non-examples)
+          if ((!isExample && (isEntry || role === "core" || role === "route" || (isCodeFile && fileNodes.length < 10))) && snippets.length < 12) {
             const extracted = extractSnippet(fileId, normalizedRelPath, content, snippetCounter++);
             if (extracted) {
               snippets.push(extracted.snippet);
@@ -92,6 +93,18 @@ export async function buildSkeleton(ingest: IngestResult, sourceUrl: string): Pr
   }
 
   walkDir(repoRoot);
+
+  // Prioritize root entry points over nested examples
+  entryPoints.sort((a, b) => {
+    const aIsExample = a.toLowerCase().includes("example");
+    const bIsExample = b.toLowerCase().includes("example");
+    if (!aIsExample && bIsExample) return -1;
+    if (aIsExample && !bIsExample) return 1;
+    const aDepth = a.split("/").length;
+    const bDepth = b.split("/").length;
+    if (aDepth !== bDepth) return aDepth - bDepth;
+    return a.localeCompare(b);
+  });
 
   // Guarantee that snippets are extracted even for repos without traditional src/ directories
   if (snippets.length === 0) {

@@ -157,7 +157,7 @@ export function LandingPage({
               <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
               <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
               <span className="ml-3 font-mono text-[11px] text-gray-400">
-                walkthrough_amlanmohanty1_customer_trends.mp4
+                walkthrough_expressjs_express.mp4
               </span>
             </div>
             <div className="flex items-center gap-2 font-mono text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
@@ -188,14 +188,14 @@ export function LandingPage({
           {/* Under-Player Metadata Strip */}
           <div className="mt-3 px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-gray-400">
             <div className="flex items-center gap-4">
-              <span>Duration: <strong className="text-white">~52s</strong></span>
+              <span>Duration: <strong className="text-white">~50s</strong></span>
               <span>•</span>
               <span>5 Scenes</span>
               <span>•</span>
-              <span>SQL & Python</span>
+              <span>Node.js & JavaScript</span>
             </div>
             <div className="text-purple-300">
-              Grounded in real SQL aggregations & Power BI pipeline
+              Grounded in Express core architecture, routing engine & middleware pipeline
             </div>
           </div>
         </div>

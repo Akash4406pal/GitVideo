@@ -113,12 +113,15 @@ export async function renderWalkthroughVideo(
   const embeddedStoryboard = embedAudioDataUris(storyboard);
   const inputProps = { skeleton, storyboard: embeddedStoryboard };
 
+  const remotionPort = 8555;
+
   console.log(`🔍 Selecting composition 'GitVideoWalkthrough'...`);
   const composition = await selectComposition({
     serveUrl: bundleLocation,
     id: "GitVideoWalkthrough",
     inputProps,
     browserExecutable,
+    port: remotionPort,
   });
 
   const durationSec = (composition.durationInFrames / composition.fps).toFixed(2);
@@ -148,6 +151,7 @@ export async function renderWalkthroughVideo(
       concurrency: renderConcurrency,
       x264Preset: "veryfast",
       crf: 22,
+      port: remotionPort,
       frameRange,
       onProgress: ({ renderedFrames, progress }) => {
         const percent = Math.floor(progress * 100);

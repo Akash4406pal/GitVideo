@@ -24,11 +24,21 @@ export function determineFileRole(normalizedRelPath: string, isEntry: boolean): 
   if (lower.endsWith(".md") || lower.includes("docs/") || lower.includes("doc/")) {
     return "docs";
   }
+  if (
+    lower.includes("src/") ||
+    lower.includes("service") ||
+    lower.includes("model") ||
+    lower.includes("analyzer") ||
+    lower.includes("core") ||
+    lower.includes("lib/express") ||
+    lower.includes("lib/application") ||
+    lower.includes("application.") ||
+    lower.includes("express.")
+  ) {
+    return "core";
+  }
   if (lower.includes("util") || lower.includes("helper") || lower.includes("common") || lower.includes("lib/")) {
     return "utility";
-  }
-  if (lower.includes("src/") || lower.includes("service") || lower.includes("model") || lower.includes("analyzer") || lower.includes("core")) {
-    return "core";
   }
   return "other";
 }

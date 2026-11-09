@@ -21,6 +21,14 @@ export const IGNORED_DIRECTORIES = new Set([
   "obj",
   ".turbo",
   "vendor",
+  "test",
+  "tests",
+  "__tests__",
+  "spec",
+  "specs",
+  "fixtures",
+  "benchmark",
+  "benchmarks",
 ]);
 
 export const IGNORED_FILES = new Set([
