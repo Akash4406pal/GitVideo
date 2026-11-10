@@ -13,7 +13,7 @@
     width: 100%;
     margin: 0;
     padding: 0;
-    overflow-x: hidden;
+    overflow-x: clip;
     scroll-behavior: smooth;
     color-scheme: dark;
     background-color: #0b0e14;
@@ -23,7 +23,7 @@
     width: 100%;
     margin: 0;
     padding: 0;
-    overflow-x: hidden;
+    overflow-x: clip;
     background-color: #0b0e14;
     color: #e1e2eb;
     font-family: var(--font-inter);
@@ -31,7 +31,6 @@
     -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
     min-height: 100dvh;
-    overscroll-behavior-y: none;
   }
 
   .pb-safe {
@@ -39,6 +38,22 @@
   }
   .pt-safe {
     padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  /* Universal Accessible Keyboard Focus Indicator */
+  :focus-visible {
+    outline: 2px solid rgba(192, 193, 255, 0.7);
+    outline-offset: 2px;
+  }
+
+  /* Respect Reduced Motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 

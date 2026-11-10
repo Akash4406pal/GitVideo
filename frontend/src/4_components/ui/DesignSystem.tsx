@@ -68,8 +68,8 @@ export function GlassPanel({
 }) {
   return (
     <div
-      className={`rounded-2xl bg-white/[0.03] border border-white/10 backdrop-blur-xl shadow-xl ${
-        hover ? "hover:border-purple-500/30 hover:bg-white/[0.04] transition-all" : ""
+      className={`rounded-2xl bg-white/[0.03] border border-white/10 backdrop-blur-xl shadow-xl transition-all duration-200 ${
+        hover ? "hover:border-purple-500/30 hover:bg-white/[0.05] hover:-translate-y-0.5 hover:shadow-2xl" : ""
       } ${className}`}
     >
       {children}
@@ -128,15 +128,15 @@ export function PrimaryButton({
   size?: "sm" | "md" | "lg";
 }) {
   const sizeClasses = {
-    sm: "px-3.5 py-1.5 text-xs rounded-xl",
-    md: "px-6 py-3 text-xs sm:text-sm rounded-xl",
-    lg: "px-8 py-3.5 text-sm sm:text-base rounded-2xl",
+    sm: "px-3.5 py-1.5 text-xs rounded-xl min-h-[36px]",
+    md: "px-6 py-2.5 text-xs sm:text-sm rounded-xl min-h-[44px]",
+    lg: "px-8 py-3.5 text-sm sm:text-base rounded-2xl min-h-[48px]",
   };
 
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold shadow-lg shadow-purple-600/25 transition-all hover:scale-[1.02] cursor-pointer ${sizeClasses[size]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-[0.98] text-white font-semibold shadow-lg shadow-purple-600/25 transition-all hover:scale-[1.01] cursor-pointer focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:outline-none ${sizeClasses[size]} ${className}`}
     >
       {icon && <span className="material-symbols-outlined text-[18px]">{icon}</span>}
       <span>{children}</span>
@@ -163,12 +163,12 @@ export function SecondaryButton({
   size?: "sm" | "md" | "lg";
 }) {
   const sizeClasses = {
-    sm: "px-3.5 py-1.5 text-xs rounded-xl",
-    md: "px-6 py-3 text-xs sm:text-sm rounded-xl",
-    lg: "px-8 py-3.5 text-sm sm:text-base rounded-2xl",
+    sm: "px-3.5 py-1.5 text-xs rounded-xl min-h-[36px]",
+    md: "px-6 py-2.5 text-xs sm:text-sm rounded-xl min-h-[44px]",
+    lg: "px-8 py-3.5 text-sm sm:text-base rounded-2xl min-h-[48px]",
   };
 
-  const baseClasses = `inline-flex items-center justify-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-gray-300 hover:text-white font-medium backdrop-blur-xl transition-all cursor-pointer ${sizeClasses[size]} ${className}`;
+  const baseClasses = `inline-flex items-center justify-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] active:scale-[0.98] border border-white/10 text-gray-200 hover:text-white font-medium backdrop-blur-xl transition-all hover:scale-[1.01] cursor-pointer focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:outline-none ${sizeClasses[size]} ${className}`;
 
   if (href) {
     return (

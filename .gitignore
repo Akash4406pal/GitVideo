@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+*/node_modules/
 .pnpm-store/
 
 # Build and output
@@ -7,17 +8,39 @@ dist/
 build/
 out/
 .next/
+frontend/.next/
 *.tsbuildinfo
 
-# Cache and ephemeral clones
+# Cache, clones, and temporary files
 .cache/
+*/.cache/
 .temp/
+*/.temp/
 temp/
+*/temp/
+tmp/
+*/tmp/
+*.tmp
+*.bak
+
+# Media & Render Artifacts (Ephemeral video and audio compilations)
+*.mp4
+*.mp3
+*.wav
+*.aac
+backend/renders/
+backend/audio/
+backend/temp/
 
 # Environment variables & secrets
 .env
 .env.*
+*.env
 !.env.example
+frontend/.env
+frontend/.env.*
+backend/.env
+backend/.env.*
 
 # Logs
 *.log
@@ -25,9 +48,28 @@ npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
 
-# OS files
+# OS & Editor files
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# AI Agent tooling, skills & local assistant artifacts
+.agents/
+*/.agents/
+.claude/
+*/.claude/
+.codex/
+.impeccable/
+.taste-skill/
+.github/agents/
+.github/hooks/
+.github/skills/
+skills-lock.json
+*/skills-lock.json
+shots/
 
 # Documentation / Notes (keep README.md tracked)
 *.md

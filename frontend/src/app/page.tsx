@@ -138,6 +138,28 @@ export default function PipelinePage() {
     }
   }, [session]);
 
+  // Auto-dismiss API error after 8 seconds
+  useEffect(() => {
+    if (!apiError) return;
+    const timer = setTimeout(() => {
+      clearError();
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, [apiError, clearError]);
+
+  // Synchronize smooth scroll when activeSection changes or view switches to runner
+  useEffect(() => {
+    if (view === "runner" && activeSection) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(activeSection);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [view, activeSection]);
+
   const handleOpenAuth = (reason?: string, mode: "signin" | "signup" = "signup") => {
     setAuthReason(reason);
     setAuthInitialMode(mode);
@@ -236,10 +258,12 @@ export default function PipelinePage() {
       />
 
       <main className="w-full pt-20 flex-1 bg-background text-on-surface min-h-screen flex flex-col">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-6 relative overflow-hidden flex-1">
-          {/* Ambient Background Gradient Blooms */}
-          <div className="absolute -top-32 -left-20 w-96 h-96 rounded-full bg-purple-600/10 blur-[130px] pointer-events-none" />
-          <div className="absolute top-1/2 -right-32 w-[30rem] h-[30rem] rounded-full bg-indigo-600/10 blur-[150px] pointer-events-none" />
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-6 relative flex-1">
+          {/* Ambient Background Gradient Blooms (contained so they don't hijack vertical scrolling) */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+            <div className="absolute -top-32 -left-20 w-96 h-96 rounded-full bg-purple-600/10 blur-[130px]" />
+            <div className="absolute top-1/2 -right-32 w-[30rem] h-[30rem] rounded-full bg-indigo-600/10 blur-[150px]" />
+          </div>
 
           <div className="w-full flex flex-col gap-6 max-w-7xl mx-auto">
             {/* View Toggle Bar (Dashboard Hub vs Engine Telemetry Runner) */}
@@ -287,23 +311,30 @@ export default function PipelinePage() {
               </div>
             </div>
 
-            {/* API / Quota Error Toast */}
+            {/* Floating API / Quota Error Toast */}
             {apiError && (
-              <div className="p-4 rounded-xl bg-error-container/40 border border-error/40 text-error flex items-start justify-between gap-3 animate-fade-in shadow-xl">
-                <div className="flex items-start gap-2.5">
-                  <span className="material-symbols-outlined text-xl shrink-0 mt-0.5">error</span>
+              <aside
+                role="alert"
+                aria-live="assertive"
+                className="fixed top-20 right-4 sm:right-8 z-50 max-w-md w-[calc(100%-2rem)] p-4 rounded-2xl bg-[#1c0f12]/95 border border-red-500/40 text-red-200 backdrop-blur-xl shadow-2xl flex items-start justify-between gap-3 animate-fade-in"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center shrink-0 mt-0.5 border border-red-500/30">
+                    <span className="material-symbols-outlined text-lg">error</span>
+                  </div>
                   <div>
-                    <p className="font-semibold text-sm">Execution Alert</p>
-                    <p className="text-xs text-red-200 mt-0.5">{apiError}</p>
+                    <p className="font-semibold text-sm text-white">Execution Alert</p>
+                    <p className="text-xs text-red-200/90 mt-0.5 leading-relaxed">{apiError}</p>
                   </div>
                 </div>
                 <button
                   onClick={clearError}
-                  className="p-1 rounded hover:bg-white/10 text-red-200 hover:text-white transition-colors cursor-pointer"
+                  className="p-1.5 rounded-lg hover:bg-white/10 text-red-300 hover:text-white transition-colors cursor-pointer shrink-0 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:outline-none"
+                  aria-label="Dismiss alert"
                 >
-                  <span className="material-symbols-outlined text-lg">close</span>
+                  <span className="material-symbols-outlined text-base">close</span>
                 </button>
-              </div>
+              </aside>
             )}
 
             {/* ======================================================== */}

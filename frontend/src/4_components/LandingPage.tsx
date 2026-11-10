@@ -31,6 +31,7 @@ export function LandingPage({
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signup");
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [activePlan, setActivePlan] = useState<"monthly" | "annual">("monthly");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const openAuth = (reason?: string, mode: "signin" | "signup" = "signup") => {
     setAuthReason(reason);
@@ -82,12 +83,12 @@ export function LandingPage({
   ];
 
   return (
-    <div className="relative min-h-screen bg-[#0b0e14] text-on-surface overflow-x-hidden selection:bg-purple-500 selection:text-white">
+    <div className="relative min-h-screen bg-[#0b0e14] text-on-surface overflow-x-clip selection:bg-purple-500 selection:text-white">
       {/* Film Grain Texture Overlay */}
       <GrainOverlay />
 
       {/* Dynamic Background Ambient Glows */}
-      <div className="fixed inset-0 pointer-events-none z-0">
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <AmbientGlow color="purple" position="top-left" size="lg" />
         <AmbientGlow color="indigo" position="top-right" size="lg" />
         <AmbientGlow color="emerald" position="bottom" size="lg" />
@@ -123,8 +124,8 @@ export function LandingPage({
             <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
           </nav>
 
-          {/* CTA Group */}
-          <div className="flex items-center gap-3">
+          {/* CTA Group & Mobile Menu Toggle */}
+          <div className="flex items-center gap-2 sm:gap-3">
             {isAuthenticated ? (
               <PrimaryButton onClick={onEnterStudio} icon="arrow_forward" size="sm">
                 Open Studio
@@ -133,7 +134,7 @@ export function LandingPage({
               <>
                 <button
                   onClick={() => openAuth("Sign in to your GitVideo account", "signin")}
-                  className="px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-white transition-colors"
+                  className="px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-white transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:outline-none rounded-lg"
                 >
                   Log In
                 </button>
@@ -146,8 +147,46 @@ export function LandingPage({
                 </PrimaryButton>
               </>
             )}
+
+            {/* Mobile Hamburger Toggle */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-gray-300 hover:text-white transition-colors cursor-pointer border border-white/10"
+              aria-label="Toggle navigation menu"
+              aria-expanded={mobileMenuOpen}
+            >
+              <span className="material-symbols-outlined text-xl">
+                {mobileMenuOpen ? "close" : "menu"}
+              </span>
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Drawer */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden px-4 pt-3 pb-5 bg-[#0b0e14]/95 border-b border-white/10 space-y-2 backdrop-blur-2xl animate-fade-in">
+            <nav className="flex flex-col space-y-1 text-sm font-medium text-gray-300">
+              {[
+                { href: "#how-it-works", label: "How It Works" },
+                { href: "#problem-solution", label: "Why GitVideo" },
+                { href: "#features", label: "Features" },
+                { href: "#preview", label: "Studio Preview" },
+                { href: "#use-cases", label: "Use Cases" },
+                { href: "#pricing", label: "Pricing" },
+                { href: "#faq", label: "FAQ" },
+              ].map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-2 rounded-lg hover:bg-white/5 hover:text-white transition-colors"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </nav>
+          </div>
+        )}
       </header>
 
       {/* ======================================================== */}
@@ -394,7 +433,7 @@ export function LandingPage({
         <SectionHeading
           eyebrow="Deep Capabilities"
           title="Engineered for accuracy, built for developers"
-          description="Every component of GitVideo is purpose-built to eliminate hallucinated code and make technical communication effortless."
+          description="Every stage of GitVideo is engineered to eliminate hallucinated code and deliver verifiable video documentation directly from your repository's AST."
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
