@@ -8,6 +8,8 @@ interface DashboardHubProps {
   onAnalyzeRepo: (url: string, mode: "video_16_9" | "video_9_16" | "blueprint_only" | "storyboard_only") => void;
   onOpenProfile: () => void;
   onPlayDemoVideo: () => void;
+  onOpenBlueprint?: () => void;
+  onOpenChat?: () => void;
   isRunning?: boolean;
 }
 
@@ -22,6 +24,8 @@ export function DashboardHub({
   onAnalyzeRepo,
   onOpenProfile,
   onPlayDemoVideo,
+  onOpenBlueprint,
+  onOpenChat,
   isRunning = false,
 }: DashboardHubProps) {
   const { data: session } = useSession();
@@ -60,18 +64,38 @@ export function DashboardHub({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+        <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
+          {onOpenChat && (
+            <button
+              onClick={onOpenChat}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-600/25 hover:bg-purple-600/40 border border-purple-500/35 text-xs font-mono text-purple-200 hover:text-white transition-all cursor-pointer shadow-sm active:scale-[0.98]"
+            >
+              <span className="material-symbols-outlined text-sm text-emerald-400">smart_toy</span>
+              <span>Ask Architecture Q&amp;A</span>
+            </button>
+          )}
+
+          {onOpenBlueprint && (
+            <button
+              onClick={onOpenBlueprint}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs font-mono text-purple-300 hover:text-white transition-all cursor-pointer active:scale-[0.98]"
+            >
+              <span className="material-symbols-outlined text-sm text-purple-400">description</span>
+              <span>ARCHITECTURE.md</span>
+            </button>
+          )}
+
           <button
             onClick={onOpenProfile}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs font-mono text-gray-300 hover:text-white transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs font-mono text-gray-300 hover:text-white transition-all cursor-pointer"
           >
-            <span className="material-symbols-outlined text-sm text-purple-400">account_circle</span>
-            <span>Account &amp; Quotas</span>
+            <span className="material-symbols-outlined text-sm text-gray-400">account_circle</span>
+            <span>Account</span>
           </button>
 
           <button
             onClick={onPlayDemoVideo}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-medium shadow-md shadow-purple-600/30 transition-all hover:scale-[1.02] cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-medium shadow-md shadow-purple-600/30 transition-all hover:scale-[1.02] cursor-pointer"
           >
             <span className="material-symbols-outlined text-sm">play_circle</span>
             <span>Watch Benchmark</span>

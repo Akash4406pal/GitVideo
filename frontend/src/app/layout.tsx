@@ -1,17 +1,23 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/5_shared/providers/AuthProvider";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/5_shared/auth/authOptions";
 
 export const metadata: Metadata = {
   title: "GitVideo — Your Code. Your Story. Automatically.",
-  description: "AI Product Demo Studio: Connect any GitHub repository. GitVideo discovers features, synthesizes audio narration, and renders cinematic walkthrough demos in seconds.",
+  description:
+    "AI Product Demo Studio: Connect any GitHub repository. GitVideo discovers features, synthesizes audio narration, and renders cinematic walkthrough demos in seconds.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Pre-seed session directly on the server to prevent client-side auth flash
+  const session = await getServerSession(authOptions);
+
   return (
     <html lang="en" className="dark">
       <head>
@@ -24,14 +30,13 @@ export default function RootLayout({
           rel="stylesheet"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
           rel="stylesheet"
         />
       </head>
       <body className="bg-surface font-sans text-sm text-on-surface flex flex-col min-h-screen">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider session={session}>{children}</AuthProvider>
       </body>
     </html>
   );
 }
-

@@ -8,6 +8,8 @@ export type StudioSection = "ingest" | "telemetry" | "studio" | "gallery";
 interface HeaderProps {
   onOpenAuth?: () => void;
   onOpenProfile?: () => void;
+  onOpenBlueprint?: () => void;
+  onOpenChat?: () => void;
   activeSection?: StudioSection;
   onNavigate?: (section: StudioSection) => void;
 }
@@ -22,6 +24,8 @@ const NAV_ITEMS: { id: StudioSection; label: string; icon: string }[] = [
 export function Header({
   onOpenAuth = () => {},
   onOpenProfile,
+  onOpenBlueprint,
+  onOpenChat,
   activeSection = "ingest",
   onNavigate,
 }: HeaderProps) {
@@ -99,6 +103,31 @@ export function Header({
 
         {/* Status Indicator, Mobile Hamburger, & User Profile */}
         <div className="flex items-center gap-3 shrink-0">
+          {/* Architecture Q&A & Blueprint Shortcuts */}
+          {onOpenChat && (
+            <button
+              type="button"
+              onClick={onOpenChat}
+              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/35 border border-purple-500/30 text-purple-200 hover:text-white transition-all text-xs font-mono cursor-pointer shadow-sm active:scale-[0.98]"
+              title="Ask repository architecture questions"
+            >
+              <span className="material-symbols-outlined text-[15px] text-emerald-400">smart_toy</span>
+              <span>Ask Repo Q&amp;A</span>
+            </button>
+          )}
+
+          {onOpenBlueprint && (
+            <button
+              type="button"
+              onClick={onOpenBlueprint}
+              className="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-high hover:bg-surface-container text-gray-300 hover:text-white border border-white/10 transition-all text-xs font-mono cursor-pointer active:scale-[0.98]"
+              title="Inspect ARCHITECTURE.md blueprint"
+            >
+              <span className="material-symbols-outlined text-[15px] text-purple-400">description</span>
+              <span>Blueprint</span>
+            </button>
+          )}
+
           <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-lowest border border-white/5">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span className="font-mono text-[11px] text-gray-400">BharatCode v1.0 Live</span>

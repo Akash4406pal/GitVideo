@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { ActiveJob, PipelineStep, AstMetrics, TelemetryLogLine } from '../1_domain/pipeline';
+import { ActiveJob, PipelineStep, AstMetrics, TelemetryLogLine, SkeletonData } from '../1_domain/pipeline';
 import { INITIAL_BUFFER_LOGS, TelemetryService } from '../2_services/telemetryService';
 
 const DEFAULT_JOB: ActiveJob = {
@@ -76,6 +76,7 @@ export function usePipeline() {
   const [steps, setSteps] = useState<PipelineStep[]>(INITIAL_STEPS);
   const [astMetrics, setAstMetrics] = useState<AstMetrics>(DEFAULT_AST);
   const [logs, setLogs] = useState<TelemetryLogLine[]>(INITIAL_BUFFER_LOGS);
+  const [skeleton, setSkeleton] = useState<SkeletonData | null>(null);
 
   const [seconds, setSeconds] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
@@ -94,6 +95,7 @@ export function usePipeline() {
         if (res.ok) {
           const data = await res.json();
           if (data.skeleton) {
+            setSkeleton(data.skeleton);
             const repo = data.skeleton.repo;
             setJob((prev) => ({
               ...prev,
@@ -360,5 +362,7 @@ export function usePipeline() {
     copyLogs,
     apiError,
     clearError: () => setApiError(null),
+    skeleton,
+    setSkeleton,
   };
 }

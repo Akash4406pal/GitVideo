@@ -96,3 +96,22 @@
 .bg-grain {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.035'/%3E%3C/svg%3E");
 }
+
+/* GitHub-Flavored Markdown View Enhancement */
+.github-markdown-body table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.github-markdown-body th,
+.github-markdown-body td {
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.github-markdown-body tr:nth-child(2n) {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+.github-markdown-body input[type="checkbox"] {
+  margin-right: 0.45rem;
+  accent-color: #a855f7;
+  cursor: pointer;
+}
