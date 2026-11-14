@@ -40,7 +40,12 @@ export function AccountProfileModal({ isOpen, onClose }: AccountProfileModalProp
   // Fetch real quota
   useEffect(() => {
     if (isOpen && session?.user) {
-      fetch("/api/user/quota")
+      const userId = (session.user as { id?: string }).id || session.user.email || "dev_user";
+      fetch("/api/user/quota", {
+        headers: {
+          "x-user-id": userId,
+        },
+      })
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data) {

@@ -42,6 +42,7 @@ export interface ActiveJob {
   videoUrl?: string | null;
   videoDurationSec?: number;
   videoSizeMb?: string;
+  isShorts?: boolean;
 }
 
 export interface FileNodeItem {

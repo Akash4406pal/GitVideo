@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSession } from 'next-auth/react';
 import { ActiveJob, PipelineStep, AstMetrics, TelemetryLogLine, SkeletonData } from '../1_domain/pipeline';
 import { INITIAL_BUFFER_LOGS, TelemetryService } from '../2_services/telemetryService';
 
@@ -15,6 +16,7 @@ const DEFAULT_JOB: ActiveJob = {
   videoUrl: '/api/video',
   videoDurationSec: 56.9,
   videoSizeMb: '5.49',
+  isShorts: false,
 };
 
 const INITIAL_STEPS: PipelineStep[] = [
@@ -72,11 +74,13 @@ const DEFAULT_AST: AstMetrics = {
 };
 
 export function usePipeline() {
+  const { data: session } = useSession();
   const [job, setJob] = useState<ActiveJob>(DEFAULT_JOB);
   const [steps, setSteps] = useState<PipelineStep[]>(INITIAL_STEPS);
   const [astMetrics, setAstMetrics] = useState<AstMetrics>(DEFAULT_AST);
   const [logs, setLogs] = useState<TelemetryLogLine[]>(INITIAL_BUFFER_LOGS);
   const [skeleton, setSkeleton] = useState<SkeletonData | null>(null);
+  const [storyboard, setStoryboard] = useState<any | null>(null);
 
   const [seconds, setSeconds] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
@@ -94,6 +98,9 @@ export function usePipeline() {
         const res = await fetch('/api/pipeline/status');
         if (res.ok) {
           const data = await res.json();
+          if (data.storyboard) {
+            setStoryboard(data.storyboard);
+          }
           if (data.skeleton) {
             setSkeleton(data.skeleton);
             const repo = data.skeleton.repo;
@@ -104,6 +111,7 @@ export function usePipeline() {
               videoUrl: data.hasVideo ? '/api/video' : null,
               videoDurationSec: data.videoStats?.durationSec || 56.9,
               videoSizeMb: data.videoStats?.sizeMb || '5.49',
+              isShorts: Boolean(data.videoStats?.isShorts),
               progressPercent: data.hasVideo ? 100 : 80,
             }));
 
@@ -150,7 +158,13 @@ export function usePipeline() {
   }, [job.jobId]);
 
   // 2. Real pipeline runner connecting to /api/pipeline/run
-  const analyzeRepo = useCallback(async (rawUrl: string, skipRender = false) => {
+  const analyzeRepo = useCallback(async (
+    rawUrl: string,
+    skipRender = false,
+    isShorts = false,
+    focusedFiles?: string[],
+    directive?: string
+  ) => {
     const cleanName = rawUrl
       .replace(/^https?:\/\/github\.com\//i, '')
       .replace(/\.git$/i, '')
@@ -167,6 +181,7 @@ export function usePipeline() {
       totalStages: 5,
       progressPercent: 5,
       videoUrl: null,
+      isShorts,
     });
 
     setSteps([
@@ -203,7 +218,7 @@ export function usePipeline() {
         title: '5. Remotion Video Rendering',
         badgeText: skipRender ? 'SKIPPED' : 'QUEUED',
         badgeStyle: 'queued',
-        description: skipRender ? 'Skipped via fast mode.' : 'Chromium headless MP4 renderer.',
+        description: skipRender ? 'Skipped via fast mode.' : isShorts ? 'Chromium 9:16 Shorts 720x1280 MP4 renderer.' : 'Chromium 16:9 Landscape 1280x720 MP4 renderer.',
       },
     ]);
 
@@ -213,7 +228,7 @@ export function usePipeline() {
         timestamp: '00:00.000',
         tag: 'pipeline',
         tagStyle: 'bg-primary-container/30 text-primary',
-        message: `Initiating pipeline for target: "${rawUrl}" (skipRender=${skipRender})`,
+        message: `Initiating pipeline for target: "${rawUrl}" (format=${isShorts ? '9:16 Shorts' : '16:9 Landscape'}, skipRender=${skipRender})`,
       },
     ]);
 
@@ -225,11 +240,22 @@ export function usePipeline() {
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
 
+    const effectiveUserId = session?.user?.id || session?.user?.email || "dev_user";
+
     try {
       const response = await fetch('/api/pipeline/run', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ repoUrl: rawUrl, skipRender }),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': effectiveUserId,
+        },
+        body: JSON.stringify({
+          repoUrl: rawUrl,
+          skipRender,
+          isShorts,
+          focusedFiles,
+          directive,
+        }),
         signal: abortController.signal,
       });
 
@@ -315,6 +341,10 @@ export function usePipeline() {
                   videoUrl: parsed.videoUrl || '/api/video',
                 }));
 
+                if (parsed.storyboard) {
+                  setStoryboard(parsed.storyboard);
+                }
+
                 setSteps((prevSteps) =>
                   prevSteps.map((s) => ({ ...s, badgeText: 'COMPLETED', badgeStyle: 'completed' }))
                 );
@@ -339,7 +369,7 @@ export function usePipeline() {
     } finally {
       setIsRunning(false);
     }
-  }, []);
+  }, [session]);
 
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
@@ -347,6 +377,7 @@ export function usePipeline() {
 
   return {
     job,
+    setJob,
     steps,
     astMetrics,
     logs,
@@ -364,5 +395,7 @@ export function usePipeline() {
     clearError: () => setApiError(null),
     skeleton,
     setSkeleton,
+    storyboard,
+    setStoryboard,
   };
 }

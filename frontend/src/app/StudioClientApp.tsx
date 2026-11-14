@@ -179,6 +179,8 @@ export function StudioClientApp({ initialSession }: StudioClientAppProps) {
 
   const {
     job,
+    setJob,
+    storyboard,
     steps,
     astMetrics,
     logs,
@@ -234,13 +236,19 @@ export function StudioClientApp({ initialSession }: StudioClientAppProps) {
     setIsAuthModalOpen(true);
   };
 
-  const handleAnalyzeRepo = (url: string, skipRender?: boolean) => {
+  const handleAnalyzeRepo = (
+    url: string,
+    skipRender?: boolean,
+    isShorts?: boolean,
+    files?: string[],
+    directive?: string
+  ) => {
     if (!effectiveSession?.user) {
       handleOpenAuth("Sign in or create a free account to execute repository workflows and generate videos.");
       return;
     }
     setActiveVideoOverride(null);
-    analyzeRepo(url, skipRender);
+    analyzeRepo(url, skipRender, isShorts ?? job.isShorts ?? false, files || focusedFiles, directive);
     setView("runner");
 
     setTimeout(() => {
@@ -260,6 +268,8 @@ export function StudioClientApp({ initialSession }: StudioClientAppProps) {
       return;
     }
 
+    const isShorts = mode === "video_9_16";
+
     if (mode === "storyboard_only") {
       setStudioTab("storyboard");
       setView("runner");
@@ -271,7 +281,7 @@ export function StudioClientApp({ initialSession }: StudioClientAppProps) {
     }
 
     if (mode === "blueprint_only") {
-      handleAnalyzeRepo(url, true); // skipRender = true
+      handleAnalyzeRepo(url, true, false); // skipRender = true
       return;
     }
 
@@ -297,7 +307,7 @@ export function StudioClientApp({ initialSession }: StudioClientAppProps) {
 
     // Video render (16:9 or 9:16)
     setStudioTab("video");
-    handleAnalyzeRepo(url, false);
+    handleAnalyzeRepo(url, false, isShorts);
   };
 
   const handleAcceptCached = (videoUrl: string) => {
@@ -315,7 +325,7 @@ export function StudioClientApp({ initialSession }: StudioClientAppProps) {
   const handleForceFresh = () => {
     setIsCacheModalOpen(false);
     setStudioTab("video");
-    handleAnalyzeRepo(pendingRepoUrl, false);
+    handleAnalyzeRepo(pendingRepoUrl, false, job.isShorts || false);
   };
 
   const handlePlayDemoVideo = () => {
@@ -517,9 +527,9 @@ export function StudioClientApp({ initialSession }: StudioClientAppProps) {
                     files={skeleton?.files}
                     repoName={job.repoName}
                     isRunning={isRunning}
-                    onApplySelection={(selected) => {
+                    onApplySelection={(selected, directive) => {
                       setFocusedFiles(selected);
-                      handleAnalyzeRepo(job.repoName, false);
+                      handleAnalyzeRepo(job.repoName, false, job.isShorts || false, selected, directive);
                     }}
                   />
                 </section>
@@ -560,10 +570,10 @@ export function StudioClientApp({ initialSession }: StudioClientAppProps) {
 
                   {studioTab === "storyboard" ? (
                     <StoryboardEditor
-                      initialStoryboard={DEFAULT_STORYBOARD}
-                      onApproveAndRender={() => {
+                      initialStoryboard={storyboard || DEFAULT_STORYBOARD}
+                      onApproveAndRender={(editedStoryboard, isShorts) => {
                         setStudioTab("video");
-                        handleAnalyzeRepo(job.repoName, false);
+                        handleAnalyzeRepo(job.repoName, false, isShorts);
                       }}
                       isRendering={isRunning}
                     />
@@ -573,6 +583,7 @@ export function StudioClientApp({ initialSession }: StudioClientAppProps) {
                       repoName={job.repoName}
                       durationSec={job.videoDurationSec}
                       sizeMb={job.videoSizeMb}
+                      isShorts={job.isShorts}
                     />
                   ) : (
                     <div className="w-full p-6 sm:p-8 rounded-2xl bg-surface-container-low border border-outline-variant/20 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6 relative overflow-hidden">

@@ -27,6 +27,10 @@ const nextConfig = {
         destination: `${backendUrl}/api/video`,
       },
       {
+        source: "/api/video/:path*",
+        destination: `${backendUrl}/api/video/:path*`,
+      },
+      {
         source: "/api/repo/:path*",
         destination: `${backendUrl}/api/repo/:path*`,
       },

@@ -7,6 +7,7 @@ interface VideoPlayerCardProps {
   repoName?: string;
   durationSec?: number;
   sizeMb?: string;
+  isShorts?: boolean;
 }
 
 export function VideoPlayerCard({
@@ -14,6 +15,7 @@ export function VideoPlayerCard({
   repoName = "GitVideo",
   durationSec = 56.9,
   sizeMb = "5.49",
+  isShorts = false,
 }: VideoPlayerCardProps) {
   const [copied, setCopied] = useState(false);
 
@@ -46,7 +48,7 @@ export function VideoPlayerCard({
 
         <div className="flex items-center gap-2">
           <span className="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-code-sm text-code-sm">
-            720p @ 30fps
+            {isShorts ? "9:16 Shorts @ 30fps" : "720p @ 30fps"}
           </span>
           <span className="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-code-sm text-code-sm">
             {durationSec}s
@@ -59,8 +61,14 @@ export function VideoPlayerCard({
         </div>
       </div>
 
-      {/* 16:9 Video Canvas */}
-      <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black/90 border border-outline-variant/30 shadow-inner group">
+      {/* Video Canvas (16:9 or 9:16 Shorts) */}
+      <div
+        className={
+          isShorts
+            ? "relative w-full max-w-[340px] aspect-[9/16] mx-auto rounded-lg overflow-hidden bg-black/90 border border-outline-variant/30 shadow-inner group"
+            : "relative w-full aspect-video rounded-lg overflow-hidden bg-black/90 border border-outline-variant/30 shadow-inner group"
+        }
+      >
         <video
           key={videoUrl}
           controls
@@ -94,7 +102,7 @@ export function VideoPlayerCard({
 
           <a
             href={videoUrl}
-            download={`${repoName}-walkthrough.mp4`}
+            download={`${repoName}-${isShorts ? "shorts" : "walkthrough"}.mp4`}
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-primary hover:bg-primary-container text-on-primary transition-colors font-body-sm text-body-sm font-semibold shadow-md"
           >
             <span className="material-symbols-outlined text-[16px]">download</span>

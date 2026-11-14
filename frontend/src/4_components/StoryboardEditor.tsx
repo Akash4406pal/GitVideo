@@ -48,6 +48,41 @@ export function StoryboardEditor({
   const [storyboard, setStoryboard] = useState<EditableStoryboard>(initialStoryboard);
   const [activeSceneIdx, setActiveSceneIdx] = useState<number>(0);
   const [aspectRatio, setAspectRatio] = useState<"16:9" | "9:16">("16:9");
+  const [playingAudio, setPlayingAudio] = useState<string | null>(null);
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
+
+  React.useEffect(() => {
+    if (initialStoryboard) {
+      setStoryboard(initialStoryboard);
+    }
+  }, [initialStoryboard]);
+
+  React.useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, []);
+
+  const handlePlayAudio = (clipName: string) => {
+    if (playingAudio === clipName && audioRef.current) {
+      audioRef.current.pause();
+      setPlayingAudio(null);
+      return;
+    }
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    const audio = new Audio(`/api/video/audio/${clipName}`);
+    audioRef.current = audio;
+    setPlayingAudio(clipName);
+    audio.play().catch(() => {
+      setPlayingAudio(null);
+    });
+    audio.onended = () => setPlayingAudio(null);
+    audio.onerror = () => setPlayingAudio(null);
+  };
 
   // Handle narration text edit for a specific scene & segment
   const handleTextChange = (sceneIdx: number, segIdx: number, newText: string) => {
@@ -208,7 +243,20 @@ export function StoryboardEditor({
                 <div key={segment.id} className="flex flex-col gap-2">
                   <div className="flex items-center justify-between text-[11px] font-mono text-gray-400">
                     <span>Voiceover Narration (Segment {segIdx + 1})</span>
-                    <span>{segment.text.trim().split(/\s+/).filter(Boolean).length} words</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handlePlayAudio(`${currentScene.id}_${segment.id}.mp3`)}
+                        title="Preview audio clip (if generated)"
+                        className="inline-flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-purple-300 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-xs">
+                          {playingAudio === `${currentScene.id}_${segment.id}.mp3` ? "stop" : "volume_up"}
+                        </span>
+                        {playingAudio === `${currentScene.id}_${segment.id}.mp3` ? "Stop Audio" : "Preview Audio"}
+                      </button>
+                      <span>{segment.text.trim().split(/\s+/).filter(Boolean).length} words</span>
+                    </div>
                   </div>
                   <textarea
                     rows={3}
