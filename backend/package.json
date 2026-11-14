@@ -11,7 +11,7 @@
     "analyze": "tsx src/index.ts",
     "render": "tsx src/index.ts",
     "render:quick": "tsx src/index.ts --skip-render",
-    "build": "prisma generate && tsc",
+    "build": "npx prisma generate && tsc",
     "start": "node dist/server.js"
   },
   "dependencies": {

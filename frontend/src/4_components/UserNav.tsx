@@ -27,23 +27,47 @@ export function UserNav({ onOpenAuth, onOpenProfile }: UserNavProps) {
   useEffect(() => {
     if (session?.user) {
       const userId = (session.user as { id?: string }).id || session.user.email || "dev_user";
-      fetch("/api/user/quota", {
+      fetch("/api/user/sync", {
+        method: "POST",
         headers: {
+          "Content-Type": "application/json",
           "x-user-id": userId,
         },
+        body: JSON.stringify({
+          id: userId,
+          name: session.user.name,
+          email: session.user.email,
+          image: session.user.image,
+          provider: (session.user as { provider?: string }).provider || "oauth",
+        }),
       })
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          if (data) {
+          if (data?.quota) {
             setQuota({
-              freshRemaining: data.freshRemaining ?? data.remaining ?? 3,
-              freshTotal: data.freshTotal ?? data.total ?? 3,
-              cachedRemaining: data.cachedRemaining ?? 10,
-              cachedTotal: data.cachedTotal ?? 10,
+              freshRemaining: data.quota.freshRemaining ?? 3,
+              freshTotal: data.quota.freshTotal ?? 3,
+              cachedRemaining: data.quota.cachedRemaining ?? 10,
+              cachedTotal: data.quota.cachedTotal ?? 10,
             });
           }
         })
-        .catch(() => {});
+        .catch(() => {
+          // Fallback to GET /api/user/quota if sync endpoint unavailable
+          fetch("/api/user/quota", { headers: { "x-user-id": userId } })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((d) => {
+              if (d) {
+                setQuota({
+                  freshRemaining: d.freshRemaining ?? d.remaining ?? 3,
+                  freshTotal: d.freshTotal ?? d.total ?? 3,
+                  cachedRemaining: d.cachedRemaining ?? 10,
+                  cachedTotal: d.cachedTotal ?? 10,
+                });
+              }
+            })
+            .catch(() => {});
+        });
     }
   }, [session]);
 
