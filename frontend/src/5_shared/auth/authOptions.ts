@@ -44,5 +44,5 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET || "gitvideo-super-secret-development-jwt-key-2026",
+  secret: process.env.NEXTAUTH_SECRET,
 };

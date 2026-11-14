@@ -6,7 +6,8 @@
 
 [build.environment]
   NODE_VERSION = "20"
-  SECRETS_SCAN_OMIT_PATHS = "frontend/.env.example,.env.example"
+  SECRETS_SCAN_OMIT_KEYS = "NEXTAUTH_URL"
+  SECRETS_SCAN_OMIT_PATHS = ".env.example,frontend/.env.example,frontend/.next/cache/**,.next/cache/**,.netlify/**,node_modules/**,frontend/node_modules/**"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
