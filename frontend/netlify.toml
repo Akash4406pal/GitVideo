@@ -5,6 +5,8 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  AUTH_TRUST_HOST = "true"
+  NEXTAUTH_URL = "https://gitvideo.netlify.app"
   SECRETS_SCAN_OMIT_KEYS = "NEXTAUTH_URL"
   SECRETS_SCAN_OMIT_PATHS = ".env.example,frontend/.env.example,.next/cache/**,.netlify/**,node_modules/**"
 
