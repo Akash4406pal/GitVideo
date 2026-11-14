@@ -10,6 +10,28 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ["mermaid", "react-markdown", "remark-gfm"],
   },
+  // Proxy all backend and database endpoints to the standalone Node.js backend server
+  async rewrites() {
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:5001";
+    return [
+      {
+        source: "/api/pipeline/:path*",
+        destination: `${backendUrl}/api/pipeline/:path*`,
+      },
+      {
+        source: "/api/user/:path*",
+        destination: `${backendUrl}/api/user/:path*`,
+      },
+      {
+        source: "/api/video",
+        destination: `${backendUrl}/api/video`,
+      },
+      {
+        source: "/api/repo/:path*",
+        destination: `${backendUrl}/api/repo/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -40,53 +40,57 @@ export async function buildSkeleton(ingest: IngestResult, sourceUrl: string): Pr
           walkDir(fullPath);
         }
       } else if (entry.isFile()) {
-        const stats = fs.statSync(fullPath);
-        if (shouldAnalyzeFile(fullPath, stats.size)) {
-          const content = fs.readFileSync(fullPath, "utf-8");
-          const lines = content.split(/\r?\n/);
-          const loc = lines.length;
-          totalLoc += loc;
+        try {
+          const stats = fs.statSync(fullPath);
+          if (shouldAnalyzeFile(fullPath, stats.size)) {
+            const content = fs.readFileSync(fullPath, "utf-8");
+            const lines = content.split(/\r?\n/);
+            const loc = lines.length;
+            totalLoc += loc;
 
-          const fileId = `f_${fileCounter++}`;
-          const isEntry = isEntryPoint(normalizedRelPath);
-          if (isEntry) {
-            entryPoints.push(normalizedRelPath);
-          }
-
-          const role = determineFileRole(normalizedRelPath, isEntry);
-          const snippetIds: string[] = [];
-
-          const ext = path.extname(fullPath).toLowerCase();
-          const isCodeFile = [".ts", ".tsx", ".js", ".jsx", ".py", ".sql", ".go", ".rs", ".java", ".c", ".cpp", ".h", ".sh"].includes(ext);
-          const isExample = normalizedRelPath.toLowerCase().includes("example");
-
-          // Generate snippets for entry points, core files, or code files (prioritizing non-examples)
-          if ((!isExample && (isEntry || role === "core" || role === "route" || (isCodeFile && fileNodes.length < 10))) && snippets.length < 12) {
-            const extracted = extractSnippet(fileId, normalizedRelPath, content, snippetCounter++);
-            if (extracted) {
-              snippets.push(extracted.snippet);
-              snippetIds.push(extracted.snippetId);
+            const fileId = `f_${fileCounter++}`;
+            const isEntry = isEntryPoint(normalizedRelPath);
+            if (isEntry) {
+              entryPoints.push(normalizedRelPath);
             }
-          }
-          const imports = extractImports(content, ext);
-          for (const imp of imports) {
-            dependencyEdges.push({
-              sourceFileId: fileId,
-              sourcePath: normalizedRelPath,
-              importedTarget: imp,
+
+            const role = determineFileRole(normalizedRelPath, isEntry);
+            const snippetIds: string[] = [];
+
+            const ext = path.extname(fullPath).toLowerCase();
+            const isCodeFile = [".ts", ".tsx", ".js", ".jsx", ".py", ".sql", ".go", ".rs", ".java", ".c", ".cpp", ".h", ".sh"].includes(ext);
+            const isExample = normalizedRelPath.toLowerCase().includes("example");
+
+            // Generate snippets for entry points, core files, or code files (prioritizing non-examples)
+            if ((!isExample && (isEntry || role === "core" || role === "route" || (isCodeFile && fileNodes.length < 10))) && snippets.length < 12) {
+              const extracted = extractSnippet(fileId, normalizedRelPath, content, snippetCounter++);
+              if (extracted) {
+                snippets.push(extracted.snippet);
+                snippetIds.push(extracted.snippetId);
+              }
+            }
+            const imports = extractImports(content, ext);
+            for (const imp of imports) {
+              dependencyEdges.push({
+                sourceFileId: fileId,
+                sourcePath: normalizedRelPath,
+                importedTarget: imp,
+              });
+            }
+
+            fileNodes.push({
+              id: fileId,
+              path: normalizedRelPath,
+              extension: ext,
+              loc,
+              sizeBytes: stats.size,
+              isEntryPoint: isEntry,
+              role,
+              snippetIds,
             });
           }
-
-          fileNodes.push({
-            id: fileId,
-            path: normalizedRelPath,
-            extension: ext,
-            loc,
-            sizeBytes: stats.size,
-            isEntryPoint: isEntry,
-            role,
-            snippetIds,
-          });
+        } catch (fileErr) {
+          // Skip unreadable files or broken symlinks gracefully
         }
       }
     }
@@ -157,9 +161,29 @@ export async function buildSkeleton(ingest: IngestResult, sourceUrl: string): Pr
     if (edge.importedTarget.startsWith(".")) {
       const dir = path.dirname(edge.sourcePath);
       const resolved = path.normalize(path.join(dir, edge.importedTarget)).replace(/\\/g, "/");
-      const targetId = pathToIdMap.get(resolved);
-      if (targetId) {
-        edge.targetFileId = targetId;
+      
+      const candidates = [
+        resolved,
+        `${resolved}.ts`,
+        `${resolved}.tsx`,
+        `${resolved}.js`,
+        `${resolved}.jsx`,
+        `${resolved}/index.ts`,
+        `${resolved}/index.tsx`,
+        `${resolved}/index.js`,
+      ];
+
+      if (resolved.endsWith(".js")) {
+        candidates.push(resolved.replace(/\.js$/, ".ts"));
+        candidates.push(resolved.replace(/\.js$/, ".tsx"));
+      }
+
+      for (const cand of candidates) {
+        const targetId = pathToIdMap.get(cand);
+        if (targetId) {
+          edge.targetFileId = targetId;
+          break;
+        }
       }
     }
   }

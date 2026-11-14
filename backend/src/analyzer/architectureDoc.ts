@@ -1,6 +1,43 @@
 import type { Skeleton, DependencyEdge } from "../types/skeleton.js";
 import type { Storyboard } from "../types/storyboard.js";
 
+function getMarkdownLanguageTag(filePath: string): string {
+  const ext = filePath.split(".").pop()?.toLowerCase();
+  switch (ext) {
+    case "ts":
+    case "tsx":
+      return "typescript";
+    case "js":
+    case "jsx":
+    case "mjs":
+    case "cjs":
+      return "javascript";
+    case "py":
+      return "python";
+    case "go":
+      return "go";
+    case "rs":
+      return "rust";
+    case "sql":
+      return "sql";
+    case "java":
+      return "java";
+    case "c":
+    case "h":
+      return "c";
+    case "cpp":
+    case "hpp":
+      return "cpp";
+    case "json":
+      return "json";
+    case "sh":
+    case "bash":
+      return "bash";
+    default:
+      return "text";
+  }
+}
+
 /**
  * Generates an executive, publication-ready ARCHITECTURE.md blueprint
  * based on verified static extraction and storyboard scenes.
@@ -58,7 +95,7 @@ ${snippets
   .map(
     (s, idx) => `### ${idx + 1}. \`${s.filePath}\` (Lines ${s.startLine}–${s.endLine})
 *Title:* **${s.title}**  
-\`\`\`${s.filePath.endsWith(".ts") || s.filePath.endsWith(".tsx") ? "typescript" : "javascript"}
+\`\`\`${getMarkdownLanguageTag(s.filePath)}
 ${s.code.trim()}
 \`\`\`
 `

@@ -104,6 +104,7 @@ async function main() {
       console.log(`   - Video File:   ${videoPath}`);
     }
     console.log(`==============================================\n`);
+    process.exit(0);
   } catch (error) {
     console.error(`\n❌ Pipeline failed:`, error);
     process.exit(1);

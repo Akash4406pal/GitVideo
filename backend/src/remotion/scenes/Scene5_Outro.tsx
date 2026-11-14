@@ -25,6 +25,15 @@ export const Scene5_Outro: React.FC<Scene5Props> = ({ skeleton, scene }) => {
   });
 
   const repoUrl = skeleton.repo.url || `https://github.com/example/${skeleton.repo.name}`;
+  const langs = (skeleton.repo.detectedLanguages || []).map((l) => l.toLowerCase());
+  let runCommand = `cd ${skeleton.repo.name} && npm install && npm run dev`;
+  if (langs.includes("python")) {
+    runCommand = `cd ${skeleton.repo.name} && pip install -r requirements.txt && python main.py`;
+  } else if (langs.includes("rust")) {
+    runCommand = `cd ${skeleton.repo.name} && cargo run`;
+  } else if (langs.includes("go")) {
+    runCommand = `cd ${skeleton.repo.name} && go run .`;
+  }
 
   return (
     <div
@@ -92,7 +101,7 @@ export const Scene5_Outro: React.FC<Scene5Props> = ({ skeleton, scene }) => {
           <div style={{ color: "#8b949e", marginTop: "6px" }}># 2. Install dependencies & run</div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ color: "#7ee787" }}>➜</span>
-            <span style={{ color: "#f0f6fc" }}>cd {skeleton.repo.name} && npm install && npm run dev</span>
+            <span style={{ color: "#f0f6fc" }}>{runCommand}</span>
           </div>
         </div>
       </WindowChrome>

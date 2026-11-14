@@ -1,0 +1,153 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ==========================================
+// 1. User & Authentication
+// ==========================================
+model User {
+  id            String          @id @default(cuid())
+  name          String?
+  email         String?         @unique
+  emailVerified DateTime?
+  image         String?
+  provider      String?         // "github" | "google"
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  quota         UserQuota?
+  projects      VideoProject[]
+  renders       VideoRender[]
+}
+
+model UserQuota {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Dual Quota: 3 Heavy Fresh Generations vs 10 Instant Cached Views
+  dailyFreshLimit    Int      @default(3)
+  usedFreshCount     Int      @default(0)
+
+  dailyCachedLimit   Int      @default(10)
+  usedCachedCount    Int      @default(0)
+
+  lastResetDate      String   // "YYYY-MM-DD" in UTC
+}
+
+// ==========================================
+// 2. Video Project (Target Repository)
+// ==========================================
+model VideoProject {
+  id             String             @id @default(cuid())
+  userId         String
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  repoUrl        String
+  repoName       String             // e.g. "expressjs/express"
+  defaultBranch  String             @default("main")
+  commitSha      String?            // "6bb0c7a2"
+  languages      String[]           // ["TypeScript", "JavaScript"]
+  frameworks     String[]           // ["Next.js", "React"]
+  totalLoc       Int?               // e.g. 6735
+
+  // AST Skeleton metadata stored as native JSONB
+  skeletonData   Json?              // File tree, entrypoints, extracted code snippets
+
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  compositions   VideoComposition[]
+
+  @@index([repoUrl])
+}
+
+// ==========================================
+// 3. Video Composition Blueprint (Script & Scenes)
+// ==========================================
+model VideoComposition {
+  id                  String         @id @default(cuid())
+  projectId           String
+  project             VideoProject   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  compositionId       String         @default("GitVideoWalkthrough") // "GitVideoWalkthrough" (16:9) or "GitVideoShorts" (9:16)
+  aspectRatio         String         @default("16:9")                // "16:9" | "9:16"
+  width               Int            @default(1280)
+  height              Int            @default(720)
+  fps                 Int            @default(30)
+
+  durationSec         Float          @default(60.0)
+  durationInFrames    Int            @default(1800)
+
+  tone                String         @default("engaging")            // "engaging" | "technical" | "concise"
+  voiceName           String         @default("en-US-ChristopherNeural")
+  totalWordCount      Int            @default(110)
+
+  // Full 5-Scene Storyboard with code highlight directives
+  storyboardData      Json           // Scene array, narration script, snippet focus line numbers
+
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  renders             VideoRender[]
+  audioClips          AudioClip[]
+}
+
+// ==========================================
+// 4. Voiceover Audio Clips (Cloud Storage Assets)
+// ==========================================
+model AudioClip {
+  id             String           @id @default(cuid())
+  compositionId  String
+  composition    VideoComposition @relation(fields: [compositionId], references: [id], onDelete: Cascade)
+
+  sceneId        String           // e.g. "scene_1"
+  segmentId      String           // e.g. "seg_1_1"
+  spokenText     String
+  durationSec    Float
+
+  // Cloud Object Storage URL (Cloudflare R2 / AWS S3)
+  audioUrl       String           // e.g. "https://cdn.gitvideo.ai/audio/scene_1_seg_1_1.mp3"
+  storageKey     String           // e.g. "audio/scene_1_seg_1_1.mp3"
+
+  createdAt      DateTime         @default(now())
+}
+
+// ==========================================
+// 5. Video Render Job & Cloud Storage Delivery
+// ==========================================
+model VideoRender {
+  id               String            @id @default(cuid())
+  userId           String
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  compositionId    String?
+  composition      VideoComposition? @relation(fields: [compositionId], references: [id], onDelete: SetNull)
+
+  repoUrl          String
+  repoName         String
+  commitSha        String            // "6bb0c7a2"
+  similarityScore  Float?            // 1.0 = exact, 0.94 = 94% match
+
+  status           String            @default("queued") // "queued" | "analyzing" | "synthesizing" | "rendering" | "completed" | "failed"
+  progressPercent  Int               @default(0)
+  errorMessage     String?
+
+  // Cloud Object Storage MP4 Video Output
+  videoUrl         String?           // e.g. "https://cdn.gitvideo.ai/videos/render_abc123.mp4"
+  storageKey       String?           // e.g. "videos/render_abc123.mp4"
+  videoSizeMb      String?           // "5.49"
+  videoDurationSec Float?            // 56.9
+  renderedFrames   Int?              // 1800
+  renderTimeSec    Float?            // 42.5
+
+  createdAt        DateTime          @default(now())
+  completedAt      DateTime?
+
+  @@index([repoUrl, commitSha])
+  @@index([repoUrl, status])
+}
+

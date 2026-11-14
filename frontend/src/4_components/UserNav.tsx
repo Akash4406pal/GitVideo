@@ -9,9 +9,18 @@ interface UserNavProps {
   onOpenProfile?: () => void;
 }
 
+interface QuotaState {
+  freshRemaining: number;
+  freshTotal: number;
+  cachedRemaining: number;
+  cachedTotal: number;
+  remaining?: number;
+  total?: number;
+}
+
 export function UserNav({ onOpenAuth, onOpenProfile }: UserNavProps) {
   const { data: session, status } = useSession();
-  const [quota, setQuota] = useState<{ remaining: number; total: number } | null>(null);
+  const [quota, setQuota] = useState<QuotaState | null>(null);
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
@@ -21,7 +30,12 @@ export function UserNav({ onOpenAuth, onOpenProfile }: UserNavProps) {
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data) {
-            setQuota({ remaining: data.remaining, total: data.total });
+            setQuota({
+              freshRemaining: data.freshRemaining ?? data.remaining ?? 3,
+              freshTotal: data.freshTotal ?? data.total ?? 3,
+              cachedRemaining: data.cachedRemaining ?? 10,
+              cachedTotal: data.cachedTotal ?? 10,
+            });
           }
         })
         .catch(() => {});
@@ -69,24 +83,36 @@ export function UserNav({ onOpenAuth, onOpenProfile }: UserNavProps) {
 
   return (
     <>
-      <div className="flex items-center gap-3">
-        {/* Quota Badge (Clickable to open Account & Usage Profile) */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Instant Views Badge */}
         <button
           onClick={onOpenProfile}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-medium border cursor-pointer hover:scale-105 transition-all ${
-            (quota?.remaining ?? 3) > 0
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-medium border cursor-pointer hover:scale-105 transition-all ${
+            (quota?.cachedRemaining ?? 10) > 0
+              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
+              : "bg-gray-500/10 text-gray-400 border-gray-500/30"
+          }`}
+          title="Instant Verified Walkthroughs (Zero wait time)"
+        >
+          <span className="material-symbols-outlined text-sm text-emerald-400">bolt</span>
+          <span>{quota ? `${quota.cachedRemaining}/${quota.cachedTotal}` : "10/10"} Instant</span>
+        </button>
+
+        {/* Fresh Studio Credits Badge */}
+        <button
+          onClick={onOpenProfile}
+          className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-medium border cursor-pointer hover:scale-105 transition-all ${
+            (quota?.freshRemaining ?? 3) > 0
               ? "bg-purple-500/10 text-purple-400 border-purple-500/30 hover:bg-purple-500/20"
               : "bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500/20"
           }`}
-          title="Click to view daily generation quota and account settings"
+          title="Fresh Studio Generations (Full AI pipeline render)"
         >
-          <span className="material-symbols-outlined text-sm">bolt</span>
-          <span>
-            {quota ? `${quota.remaining}/${quota.total}` : "3/3"} Videos Left
-          </span>
+          <span className="material-symbols-outlined text-sm text-purple-400">rocket_launch</span>
+          <span>{quota ? `${quota.freshRemaining}/${quota.freshTotal}` : "3/3"} Fresh</span>
         </button>
 
-        {/* User Info & Avatar (Clickable to open Account Profile) */}
+        {/* User Info & Avatar */}
         <button
           onClick={onOpenProfile}
           className="flex items-center gap-2 pl-1 cursor-pointer hover:opacity-90 transition-opacity"
@@ -104,34 +130,30 @@ export function UserNav({ onOpenAuth, onOpenProfile }: UserNavProps) {
             </div>
           )}
 
-          <span className="hidden sm:inline text-xs font-medium text-gray-300 max-w-[120px] truncate">
+          <span className="hidden md:inline text-xs font-medium text-gray-300 max-w-[120px] truncate">
             {user.name?.split(" ")[0] || "User"}
           </span>
         </button>
 
-        {/* Sign Out Button (Opens Confirmation Modal) */}
+        {/* Sign Out Trigger Button */}
         <button
           onClick={() => setIsSignOutModalOpen(true)}
-          className="text-gray-400 hover:text-red-400 transition-colors p-1 cursor-pointer"
-          title="Sign Out"
-          aria-label="Sign Out"
+          className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+          title="Sign out of account"
+          aria-label="Sign out"
         >
           <span className="material-symbols-outlined text-base">logout</span>
         </button>
       </div>
 
-      {/* Confirmation Modal to prevent accidental logouts */}
+      {/* Confirmation Sign Out Modal */}
       <SignOutConfirmModal
         isOpen={isSignOutModalOpen}
-        onClose={() => {
-          if (!isSigningOut) setIsSignOutModalOpen(false);
-        }}
+        onClose={() => setIsSignOutModalOpen(false)}
         onConfirm={handleConfirmSignOut}
-        user={user}
-        userName={user.name}
         isSigningOut={isSigningOut}
+        user={user}
       />
     </>
   );
 }
-

@@ -18,6 +18,7 @@ import { FileTreeSelector } from "../4_components/FileTreeSelector";
 import { Footer } from "../4_components/Footer";
 import { StudioLoadingSkeleton } from "../4_components/ui/StudioLoadingSkeleton";
 import type { EditableStoryboard } from "../4_components/StoryboardEditor";
+import type { CacheCheckResult } from "../1_domain/pipeline";
 
 // Lazy-loaded heavy components & modals (Only downloaded when invoked)
 const LandingPage = dynamic(
@@ -55,6 +56,11 @@ const ArchitectureBlueprintModal = dynamic(
 
 const ArchitectureChatbot = dynamic(
   () => import("../4_components/ArchitectureChatbot").then((m) => m.ArchitectureChatbot),
+  { ssr: false }
+);
+
+const CachePromptModal = dynamic(
+  () => import("../4_components/CachePromptModal").then((m) => m.CachePromptModal),
   { ssr: false }
 );
 
@@ -166,6 +172,11 @@ export function StudioClientApp({ initialSession }: StudioClientAppProps) {
   const [authInitialMode, setAuthInitialMode] = useState<"signin" | "signup">("signup");
   const [activeVideoOverride, setActiveVideoOverride] = useState<string | null>(null);
 
+  // Smart Content-Addressed Video Cache State
+  const [isCacheModalOpen, setIsCacheModalOpen] = useState(false);
+  const [cacheResult, setCacheResult] = useState<CacheCheckResult | null>(null);
+  const [pendingRepoUrl, setPendingRepoUrl] = useState<string>("");
+
   const {
     job,
     steps,
@@ -240,7 +251,7 @@ export function StudioClientApp({ initialSession }: StudioClientAppProps) {
     }, 100);
   };
 
-  const handleDashboardWorkflow = (
+  const handleDashboardWorkflow = async (
     url: string,
     mode: "video_16_9" | "video_9_16" | "blueprint_only" | "storyboard_only"
   ) => {
@@ -264,9 +275,47 @@ export function StudioClientApp({ initialSession }: StudioClientAppProps) {
       return;
     }
 
+    // Smart Ingestion Check: Inspect if a pre-compiled or >85% matching walkthrough exists
+    try {
+      const checkRes = await fetch("/api/pipeline/check-cache", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ repoUrl: url }),
+      });
+      if (checkRes.ok) {
+        const cacheData: CacheCheckResult = await checkRes.json();
+        if (cacheData.isCacheHit && cacheData.videoUrl) {
+          setPendingRepoUrl(url);
+          setCacheResult(cacheData);
+          setIsCacheModalOpen(true);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Cache check failed, proceeding to standard render:", err);
+    }
+
     // Video render (16:9 or 9:16)
     setStudioTab("video");
     handleAnalyzeRepo(url, false);
+  };
+
+  const handleAcceptCached = (videoUrl: string) => {
+    setIsCacheModalOpen(false);
+    setActiveVideoOverride(videoUrl);
+    setView("runner");
+    setTimeout(() => {
+      const studioEl = document.getElementById("studio");
+      if (studioEl) {
+        studioEl.scrollIntoView({ behavior: "smooth" });
+      }
+    }, 100);
+  };
+
+  const handleForceFresh = () => {
+    setIsCacheModalOpen(false);
+    setStudioTab("video");
+    handleAnalyzeRepo(pendingRepoUrl, false);
   };
 
   const handlePlayDemoVideo = () => {
@@ -623,6 +672,17 @@ export function StudioClientApp({ initialSession }: StudioClientAppProps) {
               const ingestEl = document.getElementById("ingest");
               if (ingestEl) ingestEl.scrollIntoView({ behavior: "smooth" });
             }}
+          />
+        )}
+
+        {/* Smart Video Cache Prompt Modal */}
+        {isCacheModalOpen && (
+          <CachePromptModal
+            isOpen={isCacheModalOpen}
+            onClose={() => setIsCacheModalOpen(false)}
+            cacheResult={cacheResult}
+            onAcceptCached={handleAcceptCached}
+            onForceFresh={handleForceFresh}
           />
         )}
 

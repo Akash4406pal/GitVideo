@@ -45,7 +45,8 @@ export async function ingestRepository(source: string, cacheDir = ".cache/repos"
   }
 
   // Treat as Git URL (HTTPS or SSH)
-  const sanitizedName = source
+  const trimmedSource = source.trim().replace(/\/+$/, "");
+  const sanitizedName = trimmedSource
     .replace(/^https?:\/\/github\.com\//i, "")
     .replace(/\.git$/i, "")
     .replace(/[^a-zA-Z0-9_\-]/g, "_");

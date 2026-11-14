@@ -36,6 +36,11 @@ export async function generateStoryboard(skeleton: Skeleton): Promise<Storyboard
       console.log(`  - Scenes: ${validation.storyboard.scenes.length}`);
       console.log(`  - Words: ${validation.storyboard.totalWordCount}`);
       console.log(`  - Estimated Duration: ~${validation.storyboard.estimatedDurationSec}s`);
+      if (validation.warnings?.length) {
+        for (const w of validation.warnings) {
+          console.log(`  ℹ️  ${w}`);
+        }
+      }
       return validation.storyboard;
     }
 

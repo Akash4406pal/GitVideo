@@ -85,3 +85,18 @@ export interface SkeletonData {
   }>;
   summary?: string;
 }
+
+
+export interface CacheCheckResult {
+  isCacheHit: boolean;
+  matchType?: 'exact' | 'similarity' | 'showcase';
+  similarityScore?: number;
+  cachedSha?: string;
+  latestSha?: string;
+  videoUrl?: string;
+  videoDurationSec?: number;
+  videoSizeMb?: string;
+  repoName?: string;
+  title?: string;
+  description?: string;
+}

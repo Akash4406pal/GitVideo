@@ -4,8 +4,9 @@
   "private": true,
   "description": "GitVideo: AI-Powered Codebase-to-Video Engine",
   "scripts": {
-    "dev": "npm --prefix frontend run dev",
+    "dev": "node scripts/dev.mjs",
     "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
     "build": "npm --prefix backend run build && npm --prefix frontend run build",
     "start": "npm --prefix frontend run start",
     "analyze": "npm --prefix backend run analyze",
