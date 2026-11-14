@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: gitvideo-backend
+    runtime: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    envVars:
+      - key: PORT
+        value: 5001
+      - key: NODE_ENV
+        value: production
+      - key: BHARATCODE_BASE_URL
+        value: https://bharatcode.ai/api/model/v1
+      - key: BHARATCODE_MODEL
+        value: qwen-3.8-27b
+      - key: CACHE_DIR
+        value: ./.cache
+      - key: OUTPUT_DIR
+        value: ./dist
+      - key: BHARATCODE_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
